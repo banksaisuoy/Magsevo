@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Page</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="root" class="app-container">
+        <h1>Debug Information</h1>
+        <div id="debug-info"></div>
+        <button id="test-api" class="btn btn-primary">Test API</button>
+        <div id="api-results"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            document.getElementById('debug-info').innerHTML = `
+                <p><strong>DOM Loaded:</strong> Yes</p>
+                <p><strong>Window Location:</strong> ${window.location.href}</p>
+                <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+            `;
+            
+            document.getElementById('test-api').addEventListener('click', async function() {
+                try {
+                    const response = await fetch('/api/videos');
+                    const data = await response.json();
+                    document.getElementById('api-results').innerHTML = `
+                        <p><strong>API Status:</strong> ${response.status}</p>
+                        <p><strong>Success:</strong> ${data.success}</p>
+                        <p><strong>Total Videos:</strong> ${data.videos ? data.videos.length : 'N/A'}</p>
+                    `;
+                } catch (error) {
+                    document.getElementById('api-results').innerHTML = `
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    `;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

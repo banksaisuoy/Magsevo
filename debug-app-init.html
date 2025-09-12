@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Initialization Debug</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="root" class="app-container">
+        <h1>App Initialization Debug</h1>
+        <div id="status">Checking app initialization...</div>
+        <div id="errors"></div>
+        <button id="manual-init" class="btn btn-primary">Manual Initialize App</button>
+        <div id="output"></div>
+    </div>
+    
+    <script src="js/app.js"></script>
+    <script src="js/app-handlers.js"></script>
+    
+    <script>
+        console.log('Debug page loaded');
+        document.getElementById('status').innerHTML = 'Debug page loaded, checking for App object...';
+        
+        // Check if App object exists
+        if (typeof App !== 'undefined') {
+            document.getElementById('status').innerHTML += '<br>✅ App object found';
+            console.log('App object is available');
+        } else {
+            document.getElementById('status').innerHTML += '<br>❌ App object not found';
+            console.log('App object is not available');
+        }
+        
+        // Manual initialization button
+        document.getElementById('manual-init').addEventListener('click', async function() {
+            console.log('Manual initialization requested');
+            document.getElementById('output').innerHTML = '<p>Attempting manual initialization...</p>';
+            
+            try {
+                if (typeof App !== 'undefined') {
+                    await App.init();
+                    document.getElementById('output').innerHTML += '<p class="text-success">App initialized successfully!</p>';
+                } else {
+                    document.getElementById('output').innerHTML += '<p class="text-error">App object not available for initialization</p>';
+                }
+            } catch (error) {
+                console.error('Error during manual initialization:', error);
+                document.getElementById('output').innerHTML += '<p class="text-error">Error: ' + error.message + '</p>';
+                document.getElementById('errors').innerHTML += '<p class="text-error">Error: ' + error.message + '</p>';
+            }
+        });
+        
+        // Check if DOMContentLoaded event is firing
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded event fired');
+            document.getElementById('status').innerHTML += '<br>✅ DOMContentLoaded event fired';
+        });
+        
+        // Check document ready state
+        console.log('Document ready state:', document.readyState);
+        document.getElementById('status').innerHTML += '<br>Document ready state: ' + document.readyState;
+    </script>
+</body>
+</html>
