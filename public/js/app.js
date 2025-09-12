@@ -308,9 +308,9 @@ const App = {
                     <button id="favorites-button" class="btn btn-secondary">
                         Favorites
                     </button>
-                    ${isAdmin ? ``
+                    ${isAdmin ? `
                         <button id="admin-panel-toggle" class="btn-icon btn-primary">
-                            <svg xmlns="http:
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.942 3.313.841 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c-.942 1.543.841 3.313-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.942-3.313-.841-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.942-1.543.841-3.313 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
@@ -599,12 +599,12 @@ Object.assign(App, {
                             </div>
                             <div class="video-controls">
                                 <button id="skip-back-btn" class="btn-icon btn-secondary" title="Skip back 10s">
-                                    <svg xmlns="http:
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/>
                                     </svg>
                                 </button>
                                 <button id="skip-forward-btn" class="btn-icon btn-secondary" title="Skip forward 10s">
-                                    <svg xmlns="http:
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4v3a1 1 0 001.6.8L12 4v8l5.4-3.2A1 1 0 0019 9V4a1 1 0 00-1.6-.8L12 7.2l-5.4-3.2A1 1 0 005 4z"/>
                                     </svg>
                                 </button>
@@ -619,7 +619,7 @@ Object.assign(App, {
                                             </svg>
                                         </button>
                                         <button id="report-btn" class="btn-icon btn-danger" data-id="${video.id}">
-                                            <svg xmlns="http:
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                             </svg>
                                         </button>
@@ -648,7 +648,7 @@ Object.assign(App, {
                         <div class="card">
                             <h2 class="text-xl font-bold mb-4">Related Videos</h2>
                             <div class="space-y-4">
-                                ${relatedVideos.length > 0 ? relatedVideos.map(video => ``
+                                ${relatedVideos.length > 0 ? relatedVideos.map(video => `
                                     <div class="flex items-center space-x-4 p-2 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors" data-video-id="${video.id}">
                                         <img class="w-24 h-auto rounded-lg" src="${video.thumbnailUrl}" alt="${video.title}">
                                         <div class="flex-1">
@@ -703,12 +703,12 @@ Object.assign(App, {
             const response = await this.api.get('/favorites');
             const favorites = response.success ? response.favorites : [];
 
-            const favoritesHtml = ``
+            const favoritesHtml = `
                 <div class="space-y-8">
                     <section>
                         <h2 class="text-2xl font-bold mb-4">My Favorites</h2>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                            ${favorites.length > 0 ? favorites.map(video => ``
+                            ${favorites.length > 0 ? favorites.map(video => `
                                 <div class="video-card" data-video-id="${video.id}">
                                     <img src="${video.thumbnailUrl}" alt="${video.title}" class="video-card-img">
                                     <div class="video-card-content">
@@ -745,7 +745,7 @@ Object.assign(App, {
             return;
         }
 
-        const adminPanelHtml = ``
+        const adminPanelHtml = `
             <div class="admin-panel">
                 <h2 class="admin-title">Admin Panel</h2>
                 <div class="nav-tabs">
@@ -915,17 +915,19 @@ Object.assign(App, {
     },
 
     getVideoEmbed(url) {
-        
+        // Handle empty or invalid URLs
         if (!url || typeof url !== 'string') {
             return '<div class="text-center text-error">No valid video URL provided</div>';
         }
 
+        // Trim whitespace
         url = url.trim();
 
+        // Check if URL is empty after trimming
         if (!url) {
             return '<div class="text-center text-error">No video URL provided</div>';
         }
-        
+
         try {
             if (url.includes('youtube.com/watch')) {
                 const parsedUrl = new URL(url);
@@ -933,25 +935,26 @@ Object.assign(App, {
                 if (!videoId) {
                     throw new Error('Invalid YouTube URL - missing video ID');
                 }
-                return `<iframe class="absolute top-0 left-0 w-full h-full" src="https:
+                return `<iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
             } else if (url.includes('youtu.be/')) {
-                
+                // Handle YouTube short URLs
                 const videoId = url.split('/').pop().split('?')[0];
                 if (!videoId) {
                     throw new Error('Invalid YouTube short URL');
                 }
-                return `<iframe class="absolute top-0 left-0 w-full h-full" src="https:
+                return `<iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
             } else if (url.includes('drive.google.com/file/d/')) {
-                
+                // Handle Google Drive URLs
                 const videoId = url.split('/d/')[1].split('/')[0];
                 if (!videoId) {
                     throw new Error('Invalid Google Drive URL');
                 }
-                return `<iframe class="absolute top-0 left-0 w-full h-full" src="https:
+                return `<iframe class="absolute top-0 left-0 w-full h-full" src="https://drive.google.com/file/d/${videoId}/preview" frameborder="0" allowfullscreen></iframe>`;
             } else {
-
+                // For other URLs, try to use them directly as video sources
+                // Add additional validation for the URL
                 try {
-                    new URL(url); 
+                    new URL(url); // This will throw if URL is invalid
                     return `<video class="absolute top-0 left-0 w-full h-full" controls><source src="${url}" type="video/mp4">Your browser does not support the video tag.</video>`;
                 } catch (urlError) {
                     throw new Error('Invalid video URL format');
@@ -1007,7 +1010,7 @@ Object.assign(App, {
     },
 
     showConfirmationModal(message, onConfirm) {
-        const modalHtml = ``
+        const modalHtml = `
             <div class="modal-content">
                 <p class="text-center mb-6">${message}</p>
                 <div class="modal-footer">
@@ -1028,11 +1031,11 @@ Object.assign(App, {
 
     async showReportModal(videoId) {
         try {
-            
+            // Load available report reasons
             const response = await this.api.get('/report-reasons');
             const reasons = response.success ? response.reasons : [];
             
-            const modalHtml = ``
+            const modalHtml = `
                 <div class="modal-content">
                     <h3 class="modal-title">Report Video</h3>
                     <form id="report-form">
@@ -1040,7 +1043,7 @@ Object.assign(App, {
                             <label for="report-reason" class="form-label">Reason for reporting:</label>
                             <select id="report-reason" class="form-select" required>
                                 <option value="">Select a reason</option>
-                                ${reasons.map(reason => ``
+                                ${reasons.map(reason => `
                                     <option value="${reason.reason}">${reason.reason}</option>
                                 `).join('')}
                             </select>
@@ -1139,8 +1142,11 @@ Object.assign(App, {
     }
 });
 
+// Initialize the application when the DOM is loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => App.init());
+    document.addEventListener('DOMContentLoaded', function() {
+        App.init();
+    });
 } else {
     App.init();
 }
