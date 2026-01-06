@@ -8,6 +8,7 @@ const App = {
         currentUser: null,
         currentPage: 'home',
         currentVideoId: null,
+        currentVideoPage: 1,
         isAdminPanelOpen: false,
         currentAdminTab: 'users',
         siteSettings: {
@@ -52,12 +53,22 @@ const App = {
                 if (response.success) {
                     this.state.currentUser = response.user;
                     console.log('User authenticated:', this.state.currentUser);
+                } else {
+                    // Token verification failed, remove invalid token
+                    localStorage.removeItem('authToken');
+                    this.state.currentUser = null;
+                    console.log('Token verification failed, removed invalid token');
                 }
             } catch (error) {
                 // Token is invalid, remove it
                 localStorage.removeItem('authToken');
+                this.state.currentUser = null;
                 console.log('Invalid token, removed from localStorage');
             }
+        } else {
+            // No token found, ensure currentUser is null
+            this.state.currentUser = null;
+            console.log('No auth token found, setting currentUser to null');
         }
 
         // Load initial data
@@ -229,13 +240,13 @@ const App = {
         console.log('Rendering app, current page:', this.state.currentPage, 'user:', this.state.currentUser);
         console.log('Featured interval ID during render:', this.state.featuredIntervalId);
         if (!this.state.currentUser) {
-
+            console.log('No current user, rendering login page');
             this.renderLoginPage();
         } else {
             console.log('Rendering main app for user:', this.state.currentUser.username);
             switch (this.state.currentPage) {
                 case 'home':
-
+                    console.log('Rendering home page');
                     this.renderHomePage();
                     break;
                 case 'video':
@@ -243,15 +254,15 @@ const App = {
                     this.renderVideoPage(this.state.currentVideoId);
                     break;
                 case 'admin':
-
+                    console.log('Rendering admin page');
                     this.renderAdminPage();
                     break;
                 case 'favorites':
-
+                    console.log('Rendering favorites page');
                     this.renderFavoritesPage();
                     break;
                 default:
-
+                    console.log('Rendering default home page');
                     this.renderHomePage();
             }
         }
@@ -440,6 +451,13 @@ const App = {
             </div>
         `).join('');
 
+        // Pagination variables
+        const videosPerPage = 10; // 5 videos per row, 2 rows per page
+        const totalPages = Math.ceil(videosToRender.length / videosPerPage);
+        const currentPage = this.state.currentVideoPage || 1;
+        const startIndex = (currentPage - 1) * videosPerPage;
+        const paginatedVideos = videosToRender.slice(startIndex, startIndex + videosPerPage);
+
         const homepageHtml = `
             <div class="space-y-8">
                 ${hasFeatured ? `
@@ -476,8 +494,8 @@ const App = {
 
                 <section>
                     <h2 class="text-2xl font-bold mb-4">${filteredVideos ? 'Search Results' : 'All Videos'}</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                        ${videosToRender.length > 0 ? videosToRender.map(video => `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+                        ${paginatedVideos.length > 0 ? paginatedVideos.map(video => `
                             <div class="video-card" data-video-id="${video.id}">
                                 <img src="${video.thumbnailUrl}" alt="${video.title}" class="video-card-img">
                                 <div class="video-card-content">
@@ -487,6 +505,23 @@ const App = {
                             </div>
                         `).join('') : '<div class="text-center text-muted col-span-full">No videos found</div>'}
                     </div>
+                    ${!filteredVideos && totalPages > 1 ? `
+                        <div class="pagination">
+                            <button class="pagination-button" id="prev-page-group" ${currentPage <= 10 ? 'disabled' : ''}>
+                                &laquo; Prev 10
+                            </button>
+                            <button class="pagination-button" id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>
+                                Previous
+                            </button>
+                            ${this.generatePageButtons(currentPage, totalPages)}
+                            <button class="pagination-button" id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>
+                                Next
+                            </button>
+                            <button class="pagination-button" id="next-page-group" ${currentPage > totalPages - 10 ? 'disabled' : ''}>
+                                Next 10 &raquo;
+                            </button>
+                        </div>
+                    ` : ''}
                 </section>
             </div>
         `;
@@ -543,6 +578,63 @@ const App = {
                 this.renderHomePage(categoryVideos);
             });
         });
+
+        // Add pagination event listeners
+        if (!filteredVideos && totalPages > 1) {
+            document.getElementById('prev-page')?.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    this.state.currentVideoPage = currentPage - 1;
+                    this.renderHomePage();
+                }
+            });
+
+            document.getElementById('next-page')?.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    this.state.currentVideoPage = currentPage + 1;
+                    this.renderHomePage();
+                }
+            });
+
+            document.getElementById('prev-page-group')?.addEventListener('click', () => {
+                const newPage = Math.max(1, currentPage - 10);
+                this.state.currentVideoPage = newPage;
+                this.renderHomePage();
+            });
+
+            document.getElementById('next-page-group')?.addEventListener('click', () => {
+                const newPage = Math.min(totalPages, currentPage + 10);
+                this.state.currentVideoPage = newPage;
+                this.renderHomePage();
+            });
+
+            document.querySelectorAll('.pagination-button[data-page]').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const page = parseInt(e.target.dataset.page);
+                    if (page !== currentPage) {
+                        this.state.currentVideoPage = page;
+                        this.renderHomePage();
+                    }
+                });
+            });
+        }
+    },
+
+    // Generate page buttons with limited display
+    generatePageButtons(currentPage, totalPages) {
+        const pagesToShow = 10;
+        const startPage = Math.floor((currentPage - 1) / pagesToShow) * pagesToShow + 1;
+        const endPage = Math.min(startPage + pagesToShow - 1, totalPages);
+
+        let buttons = '';
+        for (let i = startPage; i <= endPage; i++) {
+            buttons += `
+                <button class="pagination-button ${i === currentPage ? 'active' : ''}" data-page="${i}">
+                    ${i}
+                </button>
+            `;
+        }
+
+        return buttons;
     }
 };
 
@@ -605,7 +697,7 @@ Object.assign(App, {
                                 </button>
                                 <button id="skip-forward-btn" class="btn-icon btn-secondary" title="Skip forward 10s">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4v3a1 1 0 001.6.8L12 4v8l5.4-3.2A1 1 0 0019 9V4a1 1 0 00-1.6-.8L12 7.2l-5.4-3.2A1 1 0 005 4z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4v3a1 1 0 001.6.8L12 4v8l5.4-3.2A1 1 0 0019 9V4a1 1 0 00-1.6-.8L12 7.2l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                                     </svg>
                                 </button>
                             </div>
@@ -614,8 +706,8 @@ Object.assign(App, {
                                     <h1 class="text-3xl font-bold">${video.title}</h1>
                                     <div class="flex space-x-2">
                                         <button id="favorite-btn" class="btn-icon ${isFavorited ? 'btn-danger' : 'btn-secondary'}" data-id="${video.id}">
-                                            <svg xmlns="http:
-                                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5A5.48 5.48 0 017.5 3C9.07 3 10.64 3.94 12 5.34c1.36-1.4 2.93-2.34 4.5-2.34A5.48 5.48 0 0122 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                             </svg>
                                         </button>
                                         <button id="report-btn" class="btn-icon btn-danger" data-id="${video.id}">
@@ -915,21 +1007,26 @@ Object.assign(App, {
     },
 
     getVideoEmbed(url) {
+        console.log('getVideoEmbed called with URL:', url);
         // Handle empty or invalid URLs
         if (!url || typeof url !== 'string') {
+            console.log('Invalid URL: empty or not a string');
             return '<div class="text-center text-error">No valid video URL provided</div>';
         }
 
         // Trim whitespace
         url = url.trim();
+        console.log('URL after trimming:', url);
 
         // Check if URL is empty after trimming
         if (!url) {
+            console.log('URL is empty after trimming');
             return '<div class="text-center text-error">No video URL provided</div>';
         }
 
         try {
             if (url.includes('youtube.com/watch')) {
+                console.log('YouTube URL detected');
                 const parsedUrl = new URL(url);
                 const videoId = parsedUrl.searchParams.get("v");
                 if (!videoId) {
@@ -937,6 +1034,7 @@ Object.assign(App, {
                 }
                 return `<iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
             } else if (url.includes('youtu.be/')) {
+                console.log('YouTube short URL detected');
                 // Handle YouTube short URLs
                 const videoId = url.split('/').pop().split('?')[0];
                 if (!videoId) {
@@ -944,19 +1042,72 @@ Object.assign(App, {
                 }
                 return `<iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
             } else if (url.includes('drive.google.com/file/d/')) {
+                console.log('Google Drive URL detected');
                 // Handle Google Drive URLs
                 const videoId = url.split('/d/')[1].split('/')[0];
                 if (!videoId) {
                     throw new Error('Invalid Google Drive URL');
                 }
                 return `<iframe class="absolute top-0 left-0 w-full h-full" src="https://drive.google.com/file/d/${videoId}/preview" frameborder="0" allowfullscreen></iframe>`;
+            } else if (url.includes('onedrive.live.com/') || url.includes('1drv.ms')) {
+                console.log('OneDrive URL detected');
+                // Handle OneDrive URLs
+                try {
+                    let embedUrl = url;
+
+                    // Handle 1drv.ms short links
+                    if (url.includes('1drv.ms')) {
+                        // Convert 1drv.ms to onedrive.live.com format
+                        // Extract the path part after the domain
+                        const urlParts = url.split('/');
+                        if (urlParts.length >= 4) {
+                            const pathPart = urlParts[3];
+                            // Convert to embed format
+                            embedUrl = `https://onedrive.live.com/embed.aspx?cid=${pathPart}`;
+                        } else {
+                            // Fallback - try to use the URL as-is in embed mode
+                            embedUrl = url.replace('1drv.ms', 'onedrive.live.com/embed');
+                        }
+                    }
+
+                    // Handle standard OneDrive links
+                    if (embedUrl.includes('onedrive.live.com/')) {
+                        // Convert view URLs to embed URLs
+                        if (embedUrl.includes('/view.aspx')) {
+                            embedUrl = embedUrl.replace('/view.aspx', '/embed.aspx');
+                        } else if (!embedUrl.includes('embed')) {
+                            // If it's not already an embed URL, try to convert it
+                            const urlObj = new URL(embedUrl);
+                            const params = new URLSearchParams(urlObj.search);
+                            // Try to maintain important parameters
+                            embedUrl = `https://onedrive.live.com/embed${urlObj.pathname}${urlObj.search}`;
+                        }
+                    }
+
+                    return `<iframe class="absolute top-0 left-0 w-full h-full" src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
+                } catch (onedriveError) {
+                    console.error('OneDrive URL processing error:', onedriveError);
+                    // Fallback to direct video embedding if URL conversion fails
+                    return `<video class="absolute top-0 left-0 w-full h-full" controls><source src="${url}" type="video/mp4">Your browser does not support the video tag.</video>`;
+                }
             } else {
+                console.log('Other URL type detected');
                 // For other URLs, try to use them directly as video sources
                 // Add additional validation for the URL
                 try {
-                    new URL(url); // This will throw if URL is invalid
-                    return `<video class="absolute top-0 left-0 w-full h-full" controls><source src="${url}" type="video/mp4">Your browser does not support the video tag.</video>`;
+                    // Check if it's a relative path (uploaded file) or absolute URL
+                    if (url.startsWith('/')) {
+                        console.log('Relative path detected, returning video tag directly');
+                        // This is a relative path to an uploaded file
+                        return `<video class="absolute top-0 left-0 w-full h-full" controls><source src="${url}" type="video/mp4">Your browser does not support the video tag.</video>`;
+                    } else {
+                        console.log('Absolute URL detected, validating with URL constructor');
+                        // This should be a full URL, validate it
+                        new URL(url); // This will throw if URL is invalid
+                        return `<video class="absolute top-0 left-0 w-full h-full" controls><source src="${url}" type="video/mp4">Your browser does not support the video tag.</video>`;
+                    }
                 } catch (urlError) {
+                    console.error('URL validation error:', urlError);
                     throw new Error('Invalid video URL format');
                 }
             }

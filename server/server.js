@@ -19,15 +19,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Serve uploads from custom path if configured
-if (process.env.UPLOAD_PATH) {
-    app.use('/uploads', express.static(process.env.UPLOAD_PATH));
-}
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Database setup
 const { Database } = require('./models/index');
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'visionhub.db');
-const dbInstance = new Database(dbPath);
+const dbInstance = new Database(path.join(__dirname, 'visionhub.db'));
 let db;
 
 // Initialize database connection and start server
@@ -105,6 +102,26 @@ async function initializeApp() {
 
 // Initialize database tables
 function initDatabase() {
+    // Ensure upload directories exist
+    const fs = require('fs');
+    const path = require('path');
+    const uploadDirs = [
+        path.join(__dirname, '../public/uploads'),
+        path.join(__dirname, '../public/uploads/videos'),
+        path.join(__dirname, '../public/uploads/thumbnails')
+    ];
+
+    uploadDirs.forEach(dir => {
+        if (!fs.existsSync(dir)) {
+            try {
+                fs.mkdirSync(dir, { recursive: true });
+                console.log(`Created upload directory: ${dir}`);
+            } catch (error) {
+                console.error(`Failed to create upload directory ${dir}:`, error.message);
+            }
+        }
+    });
+
     const tables = [
         `CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
