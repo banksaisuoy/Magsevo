@@ -20,7 +20,7 @@ class AIService {
     async initialize() {
         try {
             let apiKey = process.env.GEMINI_API_KEY;
-            
+
             // If no environment API key, check database
             if (!apiKey && this.db) {
                 try {
@@ -32,20 +32,14 @@ class AIService {
                     console.warn('Could not retrieve API key from database:', dbError.message);
                 }
             }
-            
+
             if (!apiKey) {
                 throw new Error('GEMINI_API_KEY is not configured');
             }
 
             this.genAI = new GoogleGenerativeAI(apiKey);
-            // Try gemini-1.5-flash first, fallback to gemini-pro if not available
-            // Use a supported model - gemini-1.5-flash may not be available in all regions
-        try {
+            // Updated to use gemini-1.5-flash which is available in the API
             this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        } catch (modelError) {
-            console.warn('gemini-1.5-flash not available, trying gemini-pro');
-            this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
-        }
             this.initialized = true;
             console.log('AI Service initialized successfully');
         } catch (error) {
@@ -65,13 +59,13 @@ class AIService {
     async rateLimit() {
         const now = Date.now();
         const timeSinceLastRequest = now - this.lastRequestTime;
-        
+
         if (timeSinceLastRequest < this.minRequestInterval) {
             const delay = this.minRequestInterval - timeSinceLastRequest;
             console.log(`Rate limiting: waiting ${delay}ms before next request`);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
-        
+
         this.lastRequestTime = Date.now();
     }
 
@@ -150,7 +144,7 @@ class AIService {
             const result = await this.model.generateContent(prompt);
             const response = await result.response;
             const tagsText = response.text().trim();
-            
+
             // Split tags by comma and clean them up
             const tags = tagsText.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
 
@@ -341,7 +335,7 @@ class AIService {
      */
     async batchProcess(videos, operations = ['categorize', 'tags']) {
         const results = [];
-        
+
         for (const video of videos) {
             const result = {
                 videoId: video.id,
@@ -394,7 +388,7 @@ class AIService {
         // Check if we have an API key from environment
         let hasEnvApiKey = !!process.env.GEMINI_API_KEY;
         let hasDbApiKey = false;
-        
+
         // Check database for API key if database is available
         if (this.db) {
             try {
@@ -404,7 +398,7 @@ class AIService {
                 console.warn('Could not check database for API key:', error.message);
             }
         }
-        
+
         return {
             initialized: this.initialized,
             hasEnvApiKey: hasEnvApiKey,

@@ -51,7 +51,7 @@ class Playlist {
             );
             position = result.nextPosition;
         }
-        
+
         return await db.run(
             'INSERT OR REPLACE INTO playlist_videos (playlist_id, video_id, position) VALUES (?, ?, ?)',
             [playlistId, videoId, position]
@@ -66,7 +66,7 @@ class Playlist {
     }
 
     static async reorderVideos(db, playlistId, videoOrders) {
-        const promises = videoOrders.map(({ videoId, position }) => 
+        const promises = videoOrders.map(({ videoId, position }) =>
             db.run(
                 'UPDATE playlist_videos SET position = ? WHERE playlist_id = ? AND video_id = ?',
                 [position, playlistId, videoId]

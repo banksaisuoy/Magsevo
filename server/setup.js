@@ -3,12 +3,12 @@ const path = require('path');
 
 async function setupDatabase() {
     console.log('Setting up VisionHub database...');
-    
+
     const database = new Database();
-    
+
     try {
         await database.connect();
-        
+
         // Create tables
         const tables = [
             `CREATE TABLE IF NOT EXISTS users (
@@ -230,10 +230,10 @@ async function setupDatabase() {
         for (const table of tables) {
             await database.run(table);
         }
-        
+
         // Seed initial data
         console.log('Seeding initial data...');
-        
+
         // Create default users
         try {
             await User.create(database, { username: 'admin', password: '123456', role: 'admin' });
@@ -245,7 +245,7 @@ async function setupDatabase() {
                 throw err;
             }
         }
-        
+
         try {
             await User.create(database, { username: 'user', password: '123456', role: 'user' });
             console.log('✓ Created test user (username: user, password: 123456)');
@@ -341,13 +341,13 @@ async function setupDatabase() {
         const defaultReasons = [
             'Inappropriate content',
             'Spam',
-            'Copyright violation', 
+            'Copyright violation',
             'Misleading content',
             'Violence or harmful content',
             'Hate speech',
             'Other'
         ];
-        
+
         for (const reason of defaultReasons) {
             try {
                 await database.run('INSERT OR IGNORE INTO report_reasons (reason) VALUES (?)', [reason]);
@@ -361,7 +361,7 @@ async function setupDatabase() {
         console.log('\nDefault login credentials:');
         console.log('- Admin: username=admin, password=123456');
         console.log('- User: username=user, password=123456');
-        
+
     } catch (error) {
         console.error('❌ Error setting up database:', error.message);
         process.exit(1);

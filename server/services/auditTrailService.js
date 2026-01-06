@@ -78,12 +78,12 @@ class AuditTrailService {
         try {
             await this.initialize();
             const auditEntries = await AuditTrail.getAll(this.db, 1000);
-            
+
             if (format === 'csv') {
                 // Convert to CSV format
                 const headers = ['ID', 'User ID', 'Action', 'Resource Type', 'Resource ID', 'Old Values', 'New Values', 'IP Address', 'User Agent', 'Timestamp'];
                 const csvRows = [headers.join(',')];
-                
+
                 auditEntries.forEach(entry => {
                     const values = [
                         entry.id,
@@ -99,7 +99,7 @@ class AuditTrailService {
                     ];
                     csvRows.push(values.join(','));
                 });
-                
+
                 return { success: true, data: csvRows.join('\n') };
             } else {
                 // Default to JSON

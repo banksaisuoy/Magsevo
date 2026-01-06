@@ -55,8 +55,8 @@ router.use('/backups', backupRoutes);
 
 // API health check
 router.get('/health', (req, res) => {
-    res.json({ 
-        success: true, 
+    res.json({
+        success: true,
         message: 'VisionHub API is running',
         timestamp: new Date().toISOString(),
         version: '1.0.0'

@@ -8,7 +8,7 @@ class ReportReasonsManagement {
 
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         try {
             const response = await this.app.api.get('/report-reasons');
             const reasons = response.success ? response.reasons : [];
@@ -46,12 +46,12 @@ class ReportReasonsManagement {
                     </table>
                 </div>
             `;
-            
+
             adminContent.innerHTML = tableHtml;
-            
+
             // Add event listeners for the management buttons
             document.getElementById('add-reason-btn').addEventListener('click', () => this.showReasonForm());
-            
+
             document.querySelectorAll('.edit-reason-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => this.handleEditReason(e));
             });
@@ -79,7 +79,7 @@ class ReportReasonsManagement {
 
     async handleDeleteReason(event) {
         const reasonId = event.currentTarget.dataset.id;
-        
+
         this.app.showConfirmationModal(
             'Are you sure you want to delete this report reason?',
             async () => {
@@ -113,9 +113,9 @@ class ReportReasonsManagement {
                 </form>
             </div>
         `;
-        
+
         this.app.showModal(modalHtml);
-        
+
         document.getElementById('reason-form').addEventListener('submit', (e) => this.handleReasonFormSubmit(e, reason));
         document.getElementById('cancel-btn').onclick = () => this.app.hideModal();
     }
@@ -124,7 +124,7 @@ class ReportReasonsManagement {
         event.preventDefault();
         const reasonId = document.getElementById('reason-id').value;
         const reasonText = document.getElementById('form-reason-text').value;
-        
+
         try {
             if (reason) {
                 await this.app.api.put(`/report-reasons/${reasonId}`, { reason: reasonText });
@@ -133,7 +133,7 @@ class ReportReasonsManagement {
                 await this.app.api.post('/report-reasons', { reason: reasonText });
                 this.app.showToast('Report reason created successfully', 'success');
             }
-            
+
             this.app.hideModal();
             this.render();
         } catch (error) {

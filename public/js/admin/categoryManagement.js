@@ -8,7 +8,7 @@ class CategoryManagement {
 
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         try {
             const response = await this.app.api.get('/categories');
             const categories = response.success ? response.categories : [];
@@ -48,9 +48,9 @@ class CategoryManagement {
                     </table>
                 </div>
             `;
-            
+
             adminContent.innerHTML = tableHtml;
-            
+
             document.getElementById('add-category-btn').addEventListener('click', () => this.showCategoryForm());
             document.querySelectorAll('.edit-category-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => this.handleEditCategory(e));
@@ -79,7 +79,7 @@ class CategoryManagement {
 
     async handleDeleteCategory(event) {
         const categoryId = event.currentTarget.dataset.id;
-        
+
         this.app.showConfirmationModal(
             'Are you sure you want to delete this category?',
             async () => {
@@ -114,9 +114,9 @@ class CategoryManagement {
                 </form>
             </div>
         `;
-        
+
         this.app.showModal(modalHtml);
-        
+
         document.getElementById('category-form').addEventListener('submit', (e) => this.handleCategoryFormSubmit(e, category));
         document.getElementById('cancel-btn').onclick = () => this.app.hideModal();
     }
@@ -125,7 +125,7 @@ class CategoryManagement {
         event.preventDefault();
         const categoryId = document.getElementById('category-id').value;
         const name = document.getElementById('form-category-name').value;
-        
+
         try {
             if (category) {
                 await this.app.api.put(`/categories/${categoryId}`, { name });
@@ -134,7 +134,7 @@ class CategoryManagement {
                 await this.app.api.post('/categories', { name });
                 this.app.showToast('Category created successfully', 'success');
             }
-            
+
             this.app.hideModal();
             await this.app.loadAllVideos();
             this.render();

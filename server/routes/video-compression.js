@@ -57,7 +57,7 @@ router.post('/optimize/:videoId', authenticateToken, requireAdmin, async (req, r
         }
 
         const result = await videoCompressionService.optimizeForWeb(videoIdNum, db);
-        
+
         if (result.success) {
             res.json({
                 success: true,
@@ -94,7 +94,7 @@ router.post('/batch-optimize', authenticateToken, requireAdmin, async (req, res)
         }
 
         const result = await videoCompressionService.batchOptimize(validIds, db);
-        
+
         res.json({
             success: true,
             batchOptimization: result
@@ -128,7 +128,7 @@ router.post('/thumbnail/:videoId', authenticateToken, requireAdmin, async (req, 
         const videoUrl = video.videoUrl;
         const videoFilename = require('path').basename(videoUrl);
         const videoPath = require('path').join(process.env.UPLOAD_PATH || './public/uploads', 'videos', videoFilename);
-        
+
         // Create thumbnail filename
         const ext = require('path').extname(videoFilename);
         const name = require('path').basename(videoFilename, ext);
@@ -136,7 +136,7 @@ router.post('/thumbnail/:videoId', authenticateToken, requireAdmin, async (req, 
         const thumbnailPath = require('path').join(process.env.UPLOAD_PATH || './public/uploads', 'thumbnails', thumbnailFilename);
 
         const result = await videoCompressionService.generateThumbnail(videoPath, thumbnailPath, { timestamp });
-        
+
         if (result.success) {
             // Update database with thumbnail path
             const thumbnailUrl = `/uploads/thumbnails/${thumbnailFilename}`;
@@ -170,9 +170,9 @@ router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
     try {
         // Get compression statistics from database
         const db = req.app.get('db');
-        
+
         const stats = await db.get(`
-            SELECT 
+            SELECT
                 COUNT(*) as totalVideos,
                 COUNT(CASE WHEN optimizedUrl IS NOT NULL THEN 1 END) as optimizedVideos,
                 AVG(CASE WHEN optimizedUrl IS NOT NULL THEN 1 ELSE 0 END) * 100 as optimizationRate

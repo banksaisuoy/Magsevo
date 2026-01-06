@@ -1,13 +1,13 @@
 class UserGroup {
     static async getAll(db) {
         return await db.all(`
-            SELECT ug.*, 
+            SELECT ug.*,
                    COUNT(ugm.username) as member_count,
                    u.username as created_by_name
-            FROM user_groups ug 
+            FROM user_groups ug
             LEFT JOIN user_group_members ugm ON ug.id = ugm.group_id AND ugm.is_active = 1
             LEFT JOIN users u ON ug.created_by = u.username
-            WHERE ug.is_active = 1 
+            WHERE ug.is_active = 1
             GROUP BY ug.id
             ORDER BY ug.name
         `);

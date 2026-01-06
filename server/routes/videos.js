@@ -83,11 +83,11 @@ router.get('/search', async (req, res) => {
     try {
         const db = await initDatabase();
         const { q: query } = req.query;
-        
+
         if (!query || query.length < 2) {
             return res.status(400).json({ error: 'Search query must be at least 2 characters' });
         }
-        
+
         const videos = await Video.search(db, query);
         res.json({ success: true, videos });
     } catch (error) {
@@ -102,11 +102,11 @@ router.get('/:id', async (req, res) => {
         const db = await initDatabase();
         const { id } = req.params;
         const video = await Video.getById(db, id);
-        
+
         if (!video) {
             return res.status(404).json({ error: 'Video not found' });
         }
-        
+
         res.json({ success: true, video });
     } catch (error) {
         console.error('Get video error:', error);
@@ -119,16 +119,16 @@ router.post('/:id/view', authenticateToken, async (req, res) => {
     try {
         const db = await initDatabase();
         const { id } = req.params;
-        
+
         // Check if video exists
         const video = await Video.getById(db, id);
         if (!video) {
             return res.status(404).json({ error: 'Video not found' });
         }
-        
+
         await Video.incrementViews(db, id);
         await Log.create(db, req.user.username, 'View Video', `Viewed video ID: ${id}, Title: ${video.title}`);
-        
+
         res.json({ success: true, message: 'View recorded' });
     } catch (error) {
         console.error('Increment views error:', error);
@@ -141,11 +141,11 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const { title, description, thumbnailUrl, videoUrl, categoryId, isFeatured } = req.body;
-        
+
         if (!title || !videoUrl || !categoryId) {
             return res.status(400).json({ error: 'Title, video URL, and category are required' });
         }
-        
+
         const result = await Video.create(db, {
             title,
             description,
@@ -154,13 +154,13 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
             categoryId,
             isFeatured: !!isFeatured
         });
-        
+
         await Log.create(db, req.user.username, 'Add Video', `Added new video: ${title}`);
-        
-        res.status(201).json({ 
-            success: true, 
+
+        res.status(201).json({
+            success: true,
             message: 'Video created successfully',
-            videoId: result.id 
+            videoId: result.id
         });
     } catch (error) {
         console.error('Create video error:', error);
@@ -174,33 +174,28 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
         const db = await initDatabase();
         const { id } = req.params;
         const { title, description, thumbnailUrl, videoUrl, categoryId, isFeatured } = req.body;
-        
+
         // Check if video exists
         const existingVideo = await Video.getById(db, id);
         if (!existingVideo) {
             return res.status(404).json({ error: 'Video not found' });
         }
-        
-        // For updates, we don't require all fields to be present
-        // Only require title (categoryId will use existing if not provided)
-        if (!title) {
-            return res.status(400).json({ error: 'Title is required' });
+
+        if (!title || !videoUrl || !categoryId) {
+            return res.status(400).json({ error: 'Title, video URL, and category are required' });
         }
-        
-        // Use existing values if new ones are not provided
-        const updateData = {
+
+        await Video.update(db, id, {
             title,
-            description: description !== undefined ? description : existingVideo.description,
-            thumbnailUrl: thumbnailUrl || existingVideo.thumbnailUrl,
-            videoUrl: videoUrl || existingVideo.videoUrl,
-            categoryId: categoryId || existingVideo.categoryId,
-            isFeatured: isFeatured !== undefined ? !!isFeatured : !!existingVideo.isFeatured
-        };
-        
-        await Video.update(db, id, updateData);
-        
+            description,
+            thumbnailUrl,
+            videoUrl,
+            categoryId,
+            isFeatured: !!isFeatured
+        });
+
         await Log.create(db, req.user.username, 'Update Video', `Updated video ID: ${id}`);
-        
+
         res.json({ success: true, message: 'Video updated successfully' });
     } catch (error) {
         console.error('Update video error:', error);
@@ -213,16 +208,16 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const { id } = req.params;
-        
+
         // Check if video exists
         const existingVideo = await Video.getById(db, id);
         if (!existingVideo) {
             return res.status(404).json({ error: 'Video not found' });
         }
-        
+
         await Video.delete(db, id);
         await Log.create(db, req.user.username, 'Delete Video', `Deleted video ID: ${id}`);
-        
+
         res.json({ success: true, message: 'Video deleted successfully' });
     } catch (error) {
         console.error('Delete video error:', error);

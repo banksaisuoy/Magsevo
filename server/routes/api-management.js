@@ -130,7 +130,7 @@ router.get('/health', (req, res) => {
                 status: 'active',
                 limits: [
                     'General: 100/15min',
-                    'Auth: 10/15min', 
+                    'Auth: 10/15min',
                     'Files: 50/15min',
                     'AI: 20/hour',
                     'Batch: 5/hour'
@@ -155,7 +155,7 @@ router.get('/health', (req, res) => {
         });
     } catch (error) {
         console.error('API health error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             error: 'Internal server error',
             health: {
@@ -170,7 +170,7 @@ router.get('/health', (req, res) => {
 router.get('/report', authenticateToken, requireAdmin, (req, res) => {
     try {
         const { format = 'json', period = '24h' } = req.query;
-        
+
         const metrics = apiManager.getDetailedMetrics();
         const report = {
             generatedAt: new Date().toISOString(),
@@ -196,7 +196,7 @@ router.get('/report', authenticateToken, requireAdmin, (req, res) => {
         if (format === 'csv') {
             // Convert to CSV format
             let csv = 'Timestamp,Endpoint,Requests,Errors,Error Rate\n';
-            
+
             metrics.topEndpoints.forEach(([endpoint, requests]) => {
                 const errors = metrics.topErrors.find(([e, count]) => e === endpoint)?.[1] || 0;
                 const errorRate = requests > 0 ? ((errors / requests) * 100).toFixed(2) : '0.00';

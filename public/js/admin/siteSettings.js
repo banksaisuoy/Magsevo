@@ -8,7 +8,7 @@ class SiteSettings {
 
     render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         const settingsHtml = `
             <form id="settings-form" class="space-y-4">
                 <div class="form-group">
@@ -24,7 +24,7 @@ class SiteSettings {
                 </div>
             </form>
         `;
-        
+
         adminContent.innerHTML = settingsHtml;
         document.getElementById('settings-form').addEventListener('submit', (e) => this.handleSaveSettings(e));
     }
@@ -33,7 +33,7 @@ class SiteSettings {
         event.preventDefault();
         const siteName = document.getElementById('site-name').value;
         const primaryColor = document.getElementById('primary-color').value;
-        
+
         try {
             await this.app.api.post('/settings', { siteName, primaryColor });
             this.app.state.siteSettings.siteName = siteName;

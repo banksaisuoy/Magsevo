@@ -16,7 +16,7 @@ class User {
     static async update(db, username, userData) {
         const updates = [];
         const values = [];
-        
+
         if (userData.password) {
             updates.push('password = ?');
             values.push(await bcrypt.hash(userData.password, 10));
@@ -45,9 +45,9 @@ class User {
             updates.push('phone = ?');
             values.push(userData.phone);
         }
-        
+
         values.push(username);
-        
+
         return await db.run(
             `UPDATE users SET ${updates.join(', ')} WHERE username = ?`,
             values

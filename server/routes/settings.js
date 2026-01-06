@@ -46,13 +46,13 @@ router.get('/', async (req, res) => {
     try {
         const db = await initDatabase();
         const settings = await Settings.getAll(db);
-        
+
         // Convert to key-value object
         const settingsObject = {};
         settings.forEach(setting => {
             settingsObject[setting.key] = setting.value;
         });
-        
+
         res.json({ success: true, settings: settingsObject });
     } catch (error) {
         console.error('Get settings error:', error);
@@ -66,11 +66,11 @@ router.get('/:key', async (req, res) => {
         const db = await initDatabase();
         const { key } = req.params;
         const setting = await Settings.get(db, key);
-        
+
         if (!setting) {
             return res.status(404).json({ error: 'Setting not found' });
         }
-        
+
         res.json({ success: true, key, value: setting.value });
     } catch (error) {
         console.error('Get setting error:', error);
@@ -83,11 +83,11 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const settings = req.body;
-        
+
         if (!settings || typeof settings !== 'object') {
             return res.status(400).json({ error: 'Settings object is required' });
         }
-        
+
         // Update each setting
         const updatedSettings = [];
         for (const [key, value] of Object.entries(settings)) {
@@ -96,17 +96,17 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
                 updatedSettings.push(key);
             }
         }
-        
+
         if (updatedSettings.length === 0) {
             return res.status(400).json({ error: 'No valid settings to update' });
         }
-        
+
         await Log.create(db, req.user.username, 'Update Settings', `Updated settings: ${updatedSettings.join(', ')}`);
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             message: 'Settings updated successfully',
-            updatedSettings 
+            updatedSettings
         });
     } catch (error) {
         console.error('Update settings error:', error);
@@ -120,19 +120,19 @@ router.put('/:key', authenticateToken, requireAdmin, async (req, res) => {
         const db = await initDatabase();
         const { key } = req.params;
         const { value } = req.body;
-        
+
         if (!value || value.trim().length === 0) {
             return res.status(400).json({ error: 'Value is required' });
         }
-        
+
         await Settings.set(db, key, value);
         await Log.create(db, req.user.username, 'Update Setting', `Updated setting ${key}: ${value}`);
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             message: 'Setting updated successfully',
             key,
-            value 
+            value
         });
     } catch (error) {
         console.error('Update setting error:', error);

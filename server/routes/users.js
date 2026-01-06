@@ -58,17 +58,17 @@ router.get('/:username', authenticateToken, async (req, res) => {
     try {
         const db = await initDatabase();
         const { username } = req.params;
-        
+
         // Users can only access their own profile, admins can access any
         if (req.user.role !== 'admin' && req.user.username !== username) {
             return res.status(403).json({ error: 'Access denied' });
         }
-        
+
         const user = await User.findByUsername(db, username);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
+
         // Remove password from response
         const { password, ...userWithoutPassword } = user;
         res.json({ success: true, user: userWithoutPassword });
@@ -83,28 +83,28 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const { username, password, role } = req.body;
-        
+
         if (!username || !password) {
             return res.status(400).json({ error: 'Username and password are required' });
         }
-        
+
         if (username.length < 3) {
             return res.status(400).json({ error: 'Username must be at least 3 characters long' });
         }
-        
+
         if (password.length < 6) {
             return res.status(400).json({ error: 'Password must be at least 6 characters long' });
         }
-        
+
         if (role && !['user', 'admin'].includes(role)) {
             return res.status(400).json({ error: 'Role must be either "user" or "admin"' });
         }
-        
+
         await User.create(db, { username, password, role: role || 'user' });
         await Log.create(db, req.user.username, 'Add User', `Added new user: ${username}`);
-        
-        res.status(201).json({ 
-            success: true, 
+
+        res.status(201).json({
+            success: true,
             message: 'User created successfully'
         });
     } catch (error) {
@@ -122,31 +122,31 @@ router.put('/:username', authenticateToken, async (req, res) => {
         const db = await initDatabase();
         const { username } = req.params;
         const { password, role, fullName, department, employeeId, email, phone } = req.body;
-        
+
         // Users can only update their own profile, admins can update any
         if (req.user.role !== 'admin' && req.user.username !== username) {
             return res.status(403).json({ error: 'Access denied' });
         }
-        
+
         // Check if user exists
         const existingUser = await User.findByUsername(db, username);
         if (!existingUser) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
+
         // Only admins can change roles
         if (role && req.user.role !== 'admin') {
             return res.status(403).json({ error: 'Only admins can change user roles' });
         }
-        
+
         if (password && password.length < 6) {
             return res.status(400).json({ error: 'Password must be at least 6 characters long' });
         }
-        
+
         if (role && !['user', 'admin'].includes(role)) {
             return res.status(400).json({ error: 'Role must be either "user" or "admin"' });
         }
-        
+
         const updateData = {};
         if (password) updateData.password = password;
         if (role) updateData.role = role;
@@ -155,14 +155,14 @@ router.put('/:username', authenticateToken, async (req, res) => {
         if (employeeId !== undefined) updateData.employeeId = employeeId;
         if (email !== undefined) updateData.email = email;
         if (phone !== undefined) updateData.phone = phone;
-        
+
         if (Object.keys(updateData).length === 0) {
             return res.status(400).json({ error: 'No valid fields to update' });
         }
-        
+
         await User.update(db, username, updateData);
         await Log.create(db, req.user.username, 'Update User', `Updated user: ${username}`);
-        
+
         res.json({ success: true, message: 'User updated successfully' });
     } catch (error) {
         console.error('Update user error:', error);
@@ -176,20 +176,20 @@ router.patch('/:username/role', authenticateToken, requireAdmin, async (req, res
         const db = await initDatabase();
         const { username } = req.params;
         const { role } = req.body;
-        
+
         if (!role || !['user', 'admin'].includes(role)) {
             return res.status(400).json({ error: 'Role must be either "user" or "admin"' });
         }
-        
+
         // Check if user exists
         const existingUser = await User.findByUsername(db, username);
         if (!existingUser) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
+
         await User.update(db, username, { role });
         await Log.create(db, req.user.username, 'Change Role', `Changed role of ${username} to ${role}`);
-        
+
         res.json({ success: true, message: `User role changed to ${role}` });
     } catch (error) {
         console.error('Change role error:', error);
@@ -203,22 +203,22 @@ router.patch('/:username', authenticateToken, async (req, res) => {
         const db = await initDatabase();
         const { username } = req.params;
         const { password, fullName, department, employeeId, email, phone } = req.body;
-        
+
         // Users can only update their own profile, admins can update any
         if (req.user.role !== 'admin' && req.user.username !== username) {
             return res.status(403).json({ error: 'Access denied' });
         }
-        
+
         // Check if user exists
         const existingUser = await User.findByUsername(db, username);
         if (!existingUser) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
+
         if (password && password.length < 6) {
             return res.status(400).json({ error: 'Password must be at least 6 characters long' });
         }
-        
+
         const updateData = {};
         if (password) updateData.password = password;
         if (fullName !== undefined) updateData.fullName = fullName;
@@ -226,16 +226,16 @@ router.patch('/:username', authenticateToken, async (req, res) => {
         if (employeeId !== undefined) updateData.employeeId = employeeId;
         if (email !== undefined) updateData.email = email;
         if (phone !== undefined) updateData.phone = phone;
-        
+
         if (Object.keys(updateData).length === 0) {
             return res.status(400).json({ error: 'No valid fields to update' });
         }
-        
+
         await User.update(db, username, updateData);
-        
+
         const action = password ? 'Change Password' : 'Update Profile';
         await Log.create(db, req.user.username, action, `Updated user profile: ${username}`);
-        
+
         res.json({ success: true, message: 'User updated successfully' });
     } catch (error) {
         console.error('Update user profile error:', error);

@@ -9,11 +9,11 @@ class VideoCompressionManagement {
     // Render Video Compression Management
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         try {
             const statusResponse = await this.app.api.get('/video-compression/status');
             const compressionStatus = statusResponse.success ? statusResponse.compression : {};
-            
+
             const compressionHtml = `
                 <div class="space-y-6">
                     <div class="flex justify-between items-center">
@@ -23,7 +23,7 @@ class VideoCompressionManagement {
                             <button id="refresh-status-btn" class="btn btn-info">Refresh Status</button>
                         </div>
                     </div>
-                    
+
                     <!-- Compression Status -->
                     <div class="card ${compressionStatus.enabled ? 'border-success' : 'border-warning'}">
                         <div class="flex items-center mb-3">
@@ -54,7 +54,7 @@ class VideoCompressionManagement {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Individual Video Compression -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="card">
@@ -64,7 +64,7 @@ class VideoCompressionManagement {
                                     <label for="compress-video" class="form-label">Select Video</label>
                                     <select id="compress-video" class="form-select" required>
                                         <option value="">Choose a video...</option>
-                                        ${this.app.state.allVideos.map(video => 
+                                        ${this.app.state.allVideos.map(video =>
                                             `<option value="${video.id}">${video.title}</option>`
                                         ).join('')}
                                     </select>
@@ -74,7 +74,7 @@ class VideoCompressionManagement {
                                 </button>
                             </form>
                         </div>
-                        
+
                         <div class="card">
                             <h4 class="text-lg font-semibold mb-3">Generate Thumbnail</h4>
                             <form id="thumbnail-form" class="space-y-3">
@@ -82,7 +82,7 @@ class VideoCompressionManagement {
                                     <label for="thumbnail-video" class="form-label">Select Video</label>
                                     <select id="thumbnail-video" class="form-select" required>
                                         <option value="">Choose a video...</option>
-                                        ${this.app.state.allVideos.map(video => 
+                                        ${this.app.state.allVideos.map(video =>
                                             `<option value="${video.id}">${video.title}</option>`
                                         ).join('')}
                                     </select>
@@ -97,7 +97,7 @@ class VideoCompressionManagement {
                             </form>
                         </div>
                     </div>
-                    
+
                     <!-- Results Display -->
                     <div id="compression-results" class="hidden">
                         <div class="card">
@@ -107,9 +107,9 @@ class VideoCompressionManagement {
                     </div>
                 </div>
             `;
-            
+
             adminContent.innerHTML = compressionHtml;
-            
+
             // Event listeners
             this.setupEventHandlers();
         } catch (error) {
@@ -125,7 +125,7 @@ class VideoCompressionManagement {
             e.preventDefault();
             const videoId = document.getElementById('compress-video').value;
             if (!videoId) return;
-            
+
             try {
                 this.app.showLoading(true, 'Optimizing video...');
                 const response = await this.app.api.post(`/video-compression/optimize/${videoId}`);
@@ -141,14 +141,14 @@ class VideoCompressionManagement {
                 this.app.showLoading(false);
             }
         });
-        
+
         // Thumbnail form
         document.getElementById('thumbnail-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const videoId = document.getElementById('thumbnail-video').value;
             const timestamp = document.getElementById('timestamp').value;
             if (!videoId) return;
-            
+
             try {
                 this.app.showLoading(true, 'Generating thumbnail...');
                 const response = await this.app.api.post(`/video-compression/thumbnail/${videoId}`, { timestamp });
@@ -164,12 +164,12 @@ class VideoCompressionManagement {
                 this.app.showLoading(false);
             }
         });
-        
+
         // Batch compress button
         document.getElementById('batch-compress-btn').addEventListener('click', () => {
             this.showBatchCompressModal();
         });
-        
+
         // Refresh status button
         document.getElementById('refresh-status-btn').addEventListener('click', async () => {
             try {
@@ -183,18 +183,18 @@ class VideoCompressionManagement {
             }
         });
     }
-    
+
     // Display Compression Results
     displayCompressionResults(title, response) {
         const resultsDiv = document.getElementById('compression-results');
         const contentDiv = document.getElementById('compression-results-content');
-        
+
         let resultHtml = `<h5 class="font-semibold mb-2">${title} Results</h5>`;
-        
+
         if (response.success) {
             resultHtml += '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-3">';
             resultHtml += '<p class="font-bold">Success!</p>';
-            
+
             if (response.optimization) {
                 const opt = response.optimization;
                 resultHtml += `<p>Original Size: <span class="font-semibold">${Math.round(opt.originalSize / 1024 / 1024 * 100) / 100} MB</span></p>`;
@@ -204,15 +204,15 @@ class VideoCompressionManagement {
                     resultHtml += `<p>Optimized URL: <span class="font-mono text-sm">${opt.optimizedUrl}</span></p>`;
                 }
             }
-            
+
             if (response.thumbnail) {
                 resultHtml += `<p>Thumbnail generated at: <span class="font-mono text-sm">${response.thumbnail.thumbnailUrl}</span></p>`;
             }
-            
+
             if (response.message) {
                 resultHtml += `<p>${response.message}</p>`;
             }
-            
+
             resultHtml += '</div>';
         } else {
             resultHtml += '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-3">';
@@ -220,10 +220,10 @@ class VideoCompressionManagement {
             resultHtml += `<p>${response.error || 'Unknown error occurred'}</p>`;
             resultHtml += '</div>';
         }
-        
+
         contentDiv.innerHTML = resultHtml;
         resultsDiv.classList.remove('hidden');
-        
+
         // Scroll to results
         resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -255,26 +255,26 @@ class VideoCompressionManagement {
                 </div>
             </div>
         `;
-        
+
         this.app.showModal(modalHtml);
-        
+
         // Event listeners
         document.getElementById('close-modal').addEventListener('click', () => this.app.hideModal());
         document.getElementById('cancel-batch-btn').addEventListener('click', () => this.app.hideModal());
-        
+
         document.getElementById('start-batch-btn').addEventListener('click', async () => {
             const selectedVideos = Array.from(document.querySelectorAll('.batch-video-checkbox:checked'))
                 .map(checkbox => checkbox.value);
-                
+
             if (selectedVideos.length === 0) {
                 this.app.showToast('Please select at least one video', 'warning');
                 return;
             }
-            
+
             try {
                 this.app.showLoading(true, `Compressing ${selectedVideos.length} videos...`);
                 const response = await this.app.api.post('/video-compression/batch-optimize', { videoIds: selectedVideos });
-                
+
                 if (response.success) {
                     this.app.hideModal();
                     await this.app.loadAllVideos();

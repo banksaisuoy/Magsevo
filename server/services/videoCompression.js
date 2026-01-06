@@ -31,13 +31,13 @@ class VideoCompressionService {
             // For now, we'll just copy the file as a placeholder
             // In a real implementation, this would use ffmpeg or similar
             await fs.copyFile(inputPath, outputPath);
-            
+
             // Get file stats
             const inputStats = await fs.stat(inputPath);
             const outputStats = await fs.stat(outputPath);
-            
+
             const compressionRatio = ((inputStats.size - outputStats.size) / inputStats.size * 100);
-            
+
             return {
                 success: true,
                 inputSize: inputStats.size,
@@ -74,7 +74,7 @@ class VideoCompressionService {
             const videoUrl = video.videoUrl;
             const videoFilename = path.basename(videoUrl);
             const videoPath = path.join(this.uploadsPath, 'videos', videoFilename);
-            
+
             // Check if file exists
             try {
                 await fs.access(videoPath);
@@ -202,7 +202,7 @@ class VideoCompressionService {
             // In a real implementation, this would use ffmpeg to extract a frame
             const placeholderContent = 'Thumbnail placeholder - would be generated with ffmpeg in production';
             await fs.writeFile(thumbnailPath, placeholderContent);
-            
+
             return {
                 success: true,
                 thumbnailPath: thumbnailPath,

@@ -7,31 +7,31 @@ Object.assign(App, {
     async renderVideoPage(videoId) {
         this.renderMainApp();
         const contentDiv = document.getElementById('content');
-        
+
         try {
             // Get video details
-            
+
             const videoResponse = await this.api.get(`/videos/${videoId}`);
 
             if (!videoResponse.success) {
                 contentDiv.innerHTML = `<div class="text-center text-error">Video not found: ${videoResponse.error || 'Unknown error'}</div>`;
                 return;
             }
-            
+
             const video = videoResponse.video;
-            
+
             // Record view
             try {
                 await this.api.post(`/videos/${videoId}/view`);
             } catch (error) {
                 console.error('Error recording view:', error);
             }
-            
+
             // Get related videos
             const relatedVideos = this.state.allVideos
                 .filter(v => v.categoryId === video.categoryId && v.id != videoId)
                 .slice(0, 4);
-            
+
             // Check if favorited
             let isFavorited = false;
             try {
@@ -40,7 +40,7 @@ Object.assign(App, {
             } catch (error) {
                 console.error('Error checking favorite status:', error);
             }
-            
+
             // Generate video embed HTML
             let videoEmbedHtml;
             try {
@@ -49,7 +49,7 @@ Object.assign(App, {
                 console.error('Error generating video embed:', error);
                 videoEmbedHtml = `<div class="text-center text-error">Error loading video player: ${error.message}</div>`;
             }
-            
+
             const videoPageHtml = `
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-2">
@@ -103,7 +103,7 @@ Object.assign(App, {
                             <div id="comments-list"></div>
                         </div>
                     </div>
-                    
+
                     <div class="lg:col-span-1">
                         <div class="card">
                             <h2 class="text-xl font-bold mb-4">Related Videos</h2>
@@ -122,16 +122,16 @@ Object.assign(App, {
                     </div>
                 </div>
             `;
-            
+
             contentDiv.innerHTML = videoPageHtml;
-            
+
             // Attach event listeners
             document.getElementById('favorite-btn').addEventListener('click', (e) => this.handleFavorite(e));
             document.getElementById('report-btn').addEventListener('click', (e) => this.handleReport(e));
             document.getElementById('comment-form').addEventListener('submit', (e) => this.handlePostComment(e));
             document.getElementById('skip-back-btn').addEventListener('click', () => this.skipVideo(-10));
             document.getElementById('skip-forward-btn').addEventListener('click', () => this.skipVideo(10));
-            
+
             // Related videos
             document.querySelectorAll('[data-video-id]').forEach(element => {
                 element.addEventListener('click', (e) => {
@@ -141,10 +141,10 @@ Object.assign(App, {
                     }
                 });
             });
-            
+
             // Load comments
             this.loadComments(videoId);
-            
+
         } catch (error) {
             console.error('Error rendering video page:', error);
             // Provide more specific error message
@@ -162,7 +162,7 @@ Object.assign(App, {
     async renderFavoritesPage() {
         this.renderMainApp();
         const contentDiv = document.getElementById('content');
-        
+
         try {
             const response = await this.api.get('/favorites');
             const favorites = response.success ? response.favorites : [];
@@ -185,9 +185,9 @@ Object.assign(App, {
                     </section>
                 </div>
             `;
-            
+
             contentDiv.innerHTML = favoritesHtml;
-            
+
             document.querySelectorAll('.video-card').forEach(card => {
                 card.addEventListener('click', (e) => {
                     this.navigateTo('video', e.currentTarget.dataset.videoId);
@@ -282,14 +282,14 @@ Object.assign(App, {
         const formData = new FormData(event.target);
         const username = formData.get('username');
         const password = formData.get('password');
-        
+
         const loginMessage = document.getElementById('login-message');
         loginMessage.classList.add('hidden');
-        
+
         try {
             this.showLoading(true);
             const response = await this.api.post('/auth/login', { username, password });
-            
+
             if (response.success) {
                 localStorage.setItem('authToken', response.token);
                 this.state.currentUser = response.user;
@@ -311,7 +311,7 @@ Object.assign(App, {
         } catch (error) {
             console.error('Logout error:', error);
         }
-        
+
         localStorage.removeItem('authToken');
         this.state.currentUser = null;
         this.state.currentPage = 'home';
@@ -338,10 +338,10 @@ Object.assign(App, {
     async handleFavorite(event) {
         const videoId = event.currentTarget.dataset.id;
         const button = event.currentTarget;
-        
+
         try {
             const isFavorited = button.classList.contains('btn-danger');
-            
+
             if (isFavorited) {
                 await this.api.delete(`/favorites/${videoId}`);
                 button.classList.remove('btn-danger');
@@ -367,15 +367,15 @@ Object.assign(App, {
     async handlePostComment(event) {
         event.preventDefault();
         const text = document.getElementById('comment-text').value.trim();
-        
+
         if (!text) return;
-        
+
         try {
             await this.api.post('/comments', {
                 videoId: this.state.currentVideoId,
                 text
             });
-            
+
             document.getElementById('comment-text').value = '';
             this.loadComments(this.state.currentVideoId);
             this.showToast('Comment posted successfully', 'success');
@@ -391,15 +391,15 @@ Object.assign(App, {
         if (!url || typeof url !== 'string') {
             return '<div class="text-center text-error">No valid video URL provided</div>';
         }
-        
+
         // Trim whitespace
         url = url.trim();
-        
+
         // Check if URL is empty after trimming
         if (!url) {
             return '<div class="text-center text-error">No video URL provided</div>';
         }
-        
+
         try {
             if (url.includes('youtube.com/watch')) {
                 const parsedUrl = new URL(url);
@@ -462,9 +462,9 @@ Object.assign(App, {
         const toast = document.createElement('div');
         toast.className = `toast-message toast-${type}`;
         toast.textContent = message;
-        
+
         this.elements.toastContainer.appendChild(toast);
-        
+
         setTimeout(() => toast.classList.add('show'), 10);
         setTimeout(() => {
             toast.classList.remove('show');
@@ -492,9 +492,9 @@ Object.assign(App, {
                 </div>
             </div>
         `;
-        
+
         this.showModal(modalHtml);
-        
+
         document.getElementById('modal-confirm-btn').onclick = () => {
             onConfirm();
             this.hideModal();
@@ -507,7 +507,7 @@ Object.assign(App, {
             // Load available report reasons
             const response = await this.api.get('/report-reasons');
             const reasons = response.success ? response.reasons : [];
-            
+
             const modalHtml = `
                 <div class="modal-content">
                     <h3 class="modal-title">Report Video</h3>
@@ -532,9 +532,9 @@ Object.assign(App, {
                     </form>
                 </div>
             `;
-            
+
             this.showModal(modalHtml);
-            
+
             // Add event listener for reason selection
             document.getElementById('report-reason').addEventListener('change', (e) => {
                 const customGroup = document.getElementById('custom-reason-group');
@@ -546,15 +546,15 @@ Object.assign(App, {
                     document.getElementById('custom-reason-text').required = false;
                 }
             });
-            
+
             document.getElementById('report-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const reason = document.getElementById('report-reason').value;
                 const customReason = document.getElementById('custom-reason-text').value;
-                
+
                 try {
-                    await this.api.post('/reports', { 
-                        videoId, 
+                    await this.api.post('/reports', {
+                        videoId,
                         reason,
                         customReason: reason === 'Other' ? customReason : null
                     });
@@ -565,7 +565,7 @@ Object.assign(App, {
                     this.showToast('Error submitting report', 'error');
                 }
             });
-            
+
             document.getElementById('modal-cancel-btn').onclick = () => this.hideModal();
         } catch (error) {
             console.error('Error loading report reasons:', error);
@@ -580,7 +580,7 @@ Object.assign(App, {
                 this.hideModal();
             }
         });
-        
+
         // Handle escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
@@ -595,12 +595,12 @@ Object.assign(App, {
             const response = await this.api.get(`/comments/video/${videoId}`);
             const comments = response.success ? response.comments : [];
             const commentsList = document.getElementById('comments-list');
-            
+
             if (comments.length === 0) {
                 commentsList.innerHTML = '<p class="text-center text-muted">No comments yet</p>';
                 return;
             }
-            
+
             const commentsHtml = comments.map(comment => `
                 <div class="comment-item">
                     <div class="comment-header">
@@ -610,15 +610,13 @@ Object.assign(App, {
                     <p class="comment-text">${comment.text}</p>
                 </div>
             `).join('');
-            
+
             commentsList.innerHTML = commentsHtml;
         } catch (error) {
             console.error('Error loading comments:', error);
         }
     }
 });
-
-// Note: App initialization is handled in app.js, so we don't need to initialize here
 
 // Initialize the application when the DOM is loaded
 if (document.readyState === 'loading') {

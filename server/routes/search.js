@@ -35,21 +35,21 @@ router.get('/', async (req, res) => {
         let query = `
             SELECT DISTINCT v.*, c.name as categoryName,
                    GROUP_CONCAT(DISTINCT t.name) as tagNames
-            FROM videos v 
+            FROM videos v
             LEFT JOIN categories c ON v.categoryId = c.id
             LEFT JOIN video_tags vt ON v.id = vt.videoId
             LEFT JOIN tags t ON vt.tagId = t.id
             WHERE 1=1
         `;
-        
+
         const params = [];
         const conditions = [];
 
         // General text search
         if (q && q.trim()) {
             conditions.push(`(
-                v.title LIKE ? OR 
-                v.description LIKE ? OR 
+                v.title LIKE ? OR
+                v.description LIKE ? OR
                 c.name LIKE ? OR
                 t.name LIKE ?
             )`);
@@ -76,7 +76,7 @@ router.get('/', async (req, res) => {
             if (tagList.length > 0) {
                 const tagPlaceholders = tagList.map(() => '?').join(',');
                 conditions.push(`(
-                    t.name IN (${tagPlaceholders}) OR 
+                    t.name IN (${tagPlaceholders}) OR
                     t.id IN (${tagPlaceholders})
                 )`);
                 params.push(...tagList, ...tagList);
@@ -88,7 +88,7 @@ router.get('/', async (req, res) => {
             conditions.push('v.duration >= ?');
             params.push(parseInt(duration_min));
         }
-        
+
         if (duration_max && !isNaN(duration_max)) {
             conditions.push('v.duration <= ?');
             params.push(parseInt(duration_max));
@@ -99,7 +99,7 @@ router.get('/', async (req, res) => {
             conditions.push('v.views >= ?');
             params.push(parseInt(views_min));
         }
-        
+
         if (views_max && !isNaN(views_max)) {
             conditions.push('v.views <= ?');
             params.push(parseInt(views_max));
@@ -123,16 +123,16 @@ router.get('/', async (req, res) => {
         // Sorting
         const validSortFields = ['created_at', 'views', 'title', 'duration'];
         const validSortOrders = ['asc', 'desc'];
-        
+
         const sortField = validSortFields.includes(sort_by) ? sort_by : 'created_at';
         const sortOrder = validSortOrders.includes(sort_order?.toLowerCase()) ? sort_order.toLowerCase() : 'desc';
-        
+
         query += ` ORDER BY v.${sortField} ${sortOrder.toUpperCase()}`;
 
         // Pagination
         const limitValue = parseInt(limit) || 20;
         const offsetValue = parseInt(offset) || 0;
-        
+
         query += ' LIMIT ? OFFSET ?';
         params.push(limitValue, offsetValue);
 
@@ -141,17 +141,17 @@ router.get('/', async (req, res) => {
         // Get total count for pagination
         let countQuery = `
             SELECT COUNT(DISTINCT v.id) as total
-            FROM videos v 
+            FROM videos v
             LEFT JOIN categories c ON v.categoryId = c.id
             LEFT JOIN video_tags vt ON v.id = vt.videoId
             LEFT JOIN tags t ON vt.tagId = t.id
             WHERE 1=1
         `;
-        
+
         if (conditions.length > 0) {
             countQuery += ' AND ' + conditions.join(' AND ');
         }
-        
+
         const countParams = params.slice(0, -2); // Remove limit and offset params
         const countResult = await db.get(countQuery, countParams);
         const total = countResult.total;
@@ -189,46 +189,46 @@ router.get('/suggestions', async (req, res) => {
     try {
         const db = await initDatabase();
         const { q } = req.query;
-        
+
         if (!q || q.trim().length < 2) {
             return res.json({ success: true, suggestions: [] });
         }
-        
+
         const searchTerm = `%${q.trim()}%`;
-        
+
         // Get video title suggestions
         const videoSuggestions = await db.all(`
             SELECT DISTINCT title as suggestion, 'video' as type
-            FROM videos 
+            FROM videos
             WHERE title LIKE ?
             ORDER BY views DESC
             LIMIT 5
         `, [searchTerm]);
-        
+
         // Get category suggestions
         const categorySuggestions = await db.all(`
             SELECT DISTINCT name as suggestion, 'category' as type
-            FROM categories 
+            FROM categories
             WHERE name LIKE ?
             ORDER BY name
             LIMIT 3
         `, [searchTerm]);
-        
+
         // Get tag suggestions
         const tagSuggestions = await db.all(`
             SELECT DISTINCT name as suggestion, 'tag' as type
-            FROM tags 
+            FROM tags
             WHERE name LIKE ?
             ORDER BY name
             LIMIT 5
         `, [searchTerm]);
-        
+
         const suggestions = [
             ...videoSuggestions,
             ...categorySuggestions,
             ...tagSuggestions
         ];
-        
+
         res.json({ success: true, suggestions });
     } catch (error) {
         console.error('Search suggestions error:', error);
@@ -240,7 +240,7 @@ router.get('/suggestions', async (req, res) => {
 router.get('/filters', async (req, res) => {
     try {
         const db = await initDatabase();
-        
+
         // Get all categories
         const categories = await db.all(`
             SELECT c.*, COUNT(v.id) as video_count
@@ -249,7 +249,7 @@ router.get('/filters', async (req, res) => {
             GROUP BY c.id
             ORDER BY c.name
         `);
-        
+
         // Get all tags with usage count
         const tags = await db.all(`
             SELECT t.*, COUNT(vt.videoId) as usage_count
@@ -258,26 +258,26 @@ router.get('/filters', async (req, res) => {
             GROUP BY t.id
             ORDER BY usage_count DESC, t.name
         `);
-        
+
         // Get duration ranges
         const durationStats = await db.get(`
-            SELECT 
+            SELECT
                 MIN(duration) as min_duration,
                 MAX(duration) as max_duration,
                 AVG(duration) as avg_duration
-            FROM videos 
+            FROM videos
             WHERE duration IS NOT NULL AND duration > 0
         `);
-        
+
         // Get views ranges
         const viewsStats = await db.get(`
-            SELECT 
+            SELECT
                 MIN(views) as min_views,
                 MAX(views) as max_views,
                 AVG(views) as avg_views
             FROM videos
         `);
-        
+
         res.json({
             success: true,
             filters: {
@@ -311,7 +311,7 @@ router.get('/filters', async (req, res) => {
 router.get('/popular', async (req, res) => {
     try {
         const db = await initDatabase();
-        
+
         // Get most viewed videos (popular content)
         const popularVideos = await db.all(`
             SELECT v.*, c.name as categoryName
@@ -320,7 +320,7 @@ router.get('/popular', async (req, res) => {
             ORDER BY v.views DESC
             LIMIT 10
         `);
-        
+
         // Get most used tags (trending tags)
         const trendingTags = await db.all(`
             SELECT t.*, COUNT(vt.videoId) as usage_count
@@ -330,7 +330,7 @@ router.get('/popular', async (req, res) => {
             ORDER BY usage_count DESC
             LIMIT 10
         `);
-        
+
         // Get categories with most content
         const popularCategories = await db.all(`
             SELECT c.*, COUNT(v.id) as video_count
@@ -340,7 +340,7 @@ router.get('/popular', async (req, res) => {
             ORDER BY video_count DESC
             LIMIT 5
         `);
-        
+
         res.json({
             success: true,
             popular: {

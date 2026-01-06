@@ -1,8 +1,8 @@
 class Comment {
     static async getByVideoId(db, videoId) {
         return await db.all(`
-            SELECT * FROM comments 
-            WHERE videoId = ? 
+            SELECT * FROM comments
+            WHERE videoId = ?
             ORDER BY created_at DESC
         `, [videoId]);
     }

@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: visionhub-cms
+    env: node
+    buildCommand: npm install && npm run setup
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
+      - key: PORT
+        value: 10000
+      - key: DB_PATH
+        value: /data/visionhub.db
+      - key: UPLOAD_PATH
+        value: /data/uploads
+    disk:
+      name: visionhub-data
+      mountPath: /data
+      sizeGB: 1

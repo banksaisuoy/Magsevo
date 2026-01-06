@@ -8,23 +8,23 @@ class PasswordPolicyManagement {
 
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         try {
             const [activePolicyResponse, allPoliciesResponse] = await Promise.all([
                 this.app.api.get('/password-policies/active'),
                 this.app.api.get('/password-policies')
             ]);
-            
+
             const activePolicy = activePolicyResponse.success ? activePolicyResponse.policy : null;
             const allPolicies = allPoliciesResponse.success ? allPoliciesResponse.policies : [];
-            
+
             const policyHtml = `
                 <div class="space-y-6">
                     <div class="flex justify-between items-center">
                         <h3 class="text-xl font-bold">Password Policy Management</h3>
                         <button id="create-policy-btn" class="btn btn-primary">Create New Policy</button>
                     </div>
-                    
+
                     ${activePolicy ? `
                         <div class="card border-success">
                             <div class="flex items-center mb-3">
@@ -64,7 +64,7 @@ class PasswordPolicyManagement {
                             </div>
                         </div>
                     `}
-                    
+
                     <div class="card">
                         <h4 class="text-lg font-semibold mb-4">All Password Policies</h4>
                         <div class="table-container">
@@ -103,9 +103,9 @@ class PasswordPolicyManagement {
                     </div>
                 </div>
             `;
-            
+
             adminContent.innerHTML = policyHtml;
-            
+
             // Event listeners
             document.getElementById('create-policy-btn').addEventListener('click', () => this.showPasswordPolicyForm());
         } catch (error) {
@@ -123,12 +123,12 @@ class PasswordPolicyManagement {
                         <label for="policy-name" class="form-label">Policy Name</label>
                         <input type="text" id="policy-name" class="form-input" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="min-length" class="form-label">Minimum Length</label>
                         <input type="number" id="min-length" value="8" min="4" max="64" class="form-input" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label class="form-label">Requirements</label>
                         <div class="space-y-2">
@@ -150,7 +150,7 @@ class PasswordPolicyManagement {
                             </label>
                         </div>
                     </div>
-                    
+
                     <div class="grid grid-cols-2 gap-4">
                         <div class="form-group">
                             <label for="max-age" class="form-label">Password Max Age (days)</label>
@@ -161,7 +161,7 @@ class PasswordPolicyManagement {
                             <input type="number" id="history-count" value="5" min="0" class="form-input">
                         </div>
                     </div>
-                    
+
                     <div class="grid grid-cols-2 gap-4">
                         <div class="form-group">
                             <label for="lockout-attempts" class="form-label">Lockout Attempts</label>
@@ -172,7 +172,7 @@ class PasswordPolicyManagement {
                             <input type="number" id="lockout-duration" value="30" min="1" class="form-input">
                         </div>
                     </div>
-                    
+
                     <div class="modal-footer">
                         <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
                         <button type="submit" class="btn btn-primary">Create Policy</button>
@@ -180,16 +180,16 @@ class PasswordPolicyManagement {
                 </form>
             </div>
         `;
-        
+
         this.app.showModal(modalHtml);
-        
+
         document.getElementById('policy-form').addEventListener('submit', (e) => this.handlePasswordPolicyFormSubmit(e));
         document.getElementById('cancel-btn').onclick = () => this.app.hideModal();
     }
 
     async handlePasswordPolicyFormSubmit(event) {
         event.preventDefault();
-        
+
         const policyData = {
             name: document.getElementById('policy-name').value,
             min_length: parseInt(document.getElementById('min-length').value),
@@ -202,7 +202,7 @@ class PasswordPolicyManagement {
             lockout_attempts: parseInt(document.getElementById('lockout-attempts').value),
             lockout_duration_minutes: parseInt(document.getElementById('lockout-duration').value)
         };
-        
+
         try {
             await this.app.api.post('/password-policies', policyData);
             this.app.showToast('Password policy created and activated successfully', 'success');

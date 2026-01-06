@@ -62,7 +62,7 @@ class SystemHealthMonitor {
     async getCpuUsage() {
         return new Promise((resolve) => {
             const startMeasure = this.cpuAverage();
-            
+
             setTimeout(() => {
                 const endMeasure = this.cpuAverage();
                 const idleDifference = endMeasure.idle - startMeasure.idle;
@@ -118,7 +118,7 @@ class SystemHealthMonitor {
     async checkDatabaseHealth() {
         try {
             const db = await this.initDatabase();
-            
+
             // Test connection
             const startTime = Date.now();
             await db.get('SELECT 1 as test');
@@ -262,8 +262,6 @@ class SystemHealthMonitor {
             } catch (error) {
                 services.geminiAI.status = 'error';
                 services.geminiAI.error = error.message;
-                // Log error but don't let it interrupt health checks
-                console.error('AI Service health check failed:', error.message);
             }
         }
 
@@ -275,7 +273,7 @@ class SystemHealthMonitor {
      */
     async performHealthCheck() {
         const startTime = Date.now();
-        
+
         const [systemMetrics, dbHealth, appHealth, externalServices] = await Promise.allSettled([
             this.getSystemMetrics(),
             this.checkDatabaseHealth(),
@@ -294,8 +292,8 @@ class SystemHealthMonitor {
         };
 
         // Determine overall health
-        const hasErrors = [dbHealth, appHealth].some(check => 
-            check.status === 'rejected' || 
+        const hasErrors = [dbHealth, appHealth].some(check =>
+            check.status === 'rejected' ||
             (check.status === 'fulfilled' && check.value.status === 'unhealthy')
         );
 
@@ -304,7 +302,7 @@ class SystemHealthMonitor {
         // Store health check in memory (in production, consider storing in database)
         this.lastCheck = healthReport;
         this.healthChecks.unshift(healthReport);
-        
+
         // Keep only last 100 checks
         if (this.healthChecks.length > 100) {
             this.healthChecks = this.healthChecks.slice(0, 100);
@@ -318,7 +316,7 @@ class SystemHealthMonitor {
      */
     startMonitoring() {
         if (this.isMonitoring) return;
-        
+
         this.isMonitoring = true;
         this.monitoringInterval = setInterval(async () => {
             try {

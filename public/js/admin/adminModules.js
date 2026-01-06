@@ -5,7 +5,7 @@ class AdminModules {
     constructor(app) {
         this.app = app;
         this.modules = {};
-        
+
         // Check if modules are available in global scope (browser environment)
         if (typeof UserManagement !== 'undefined') {
             this.modules.users = new UserManagement(app);
@@ -54,10 +54,10 @@ class AdminModules {
     // Render the appropriate admin module based on the current tab
     renderModule(tab) {
         const adminContent = document.getElementById('admin-content');
-        
+
         // Show loading message while we check for the module
         adminContent.innerHTML = '<div class="text-center">Loading admin module...</div>';
-        
+
         // Use setTimeout to allow DOM to update before rendering
         setTimeout(() => {
             const module = this.modules[tab];
@@ -86,7 +86,7 @@ class AdminModules {
                     'permissions': 'Permissions',
                     'settings': 'Site Settings'
                 };
-                
+
                 const moduleName = moduleNames[tab] || tab;
                 adminContent.innerHTML = `<div class="text-center text-error">Module "${moduleName}" not found or not properly loaded. Please check that all required JavaScript files are included.</div>`;
             }

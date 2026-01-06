@@ -8,7 +8,7 @@ class GroupsManagement {
 
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         try {
             const response = await this.app.api.get('/groups');
             const groups = response.success ? response.groups : [];
@@ -56,9 +56,9 @@ class GroupsManagement {
                     </table>
                 </div>
             `;
-            
+
             adminContent.innerHTML = tableHtml;
-            
+
             // Event listeners
             document.getElementById('add-group-btn').addEventListener('click', () => this.showGroupForm());
             document.querySelectorAll('.view-group-btn').forEach(btn => {
@@ -78,7 +78,7 @@ class GroupsManagement {
 
     async handleViewGroupMembers(event) {
         const groupId = event.currentTarget.dataset.id;
-        
+
         try {
             const response = await this.app.api.get(`/groups/${groupId}`);
             if (response.success) {
@@ -92,7 +92,7 @@ class GroupsManagement {
 
     async handleEditGroup(event) {
         const groupId = event.currentTarget.dataset.id;
-        
+
         try {
             const response = await this.app.api.get(`/groups/${groupId}`);
             if (response.success) {
@@ -106,7 +106,7 @@ class GroupsManagement {
 
     async handleDeleteGroup(event) {
         const groupId = event.currentTarget.dataset.id;
-        
+
         this.app.showConfirmationModal(
             'Are you sure you want to delete this group? All group memberships will be removed.',
             async () => {
@@ -148,9 +148,9 @@ class GroupsManagement {
                 </form>
             </div>
         `;
-        
+
         this.app.showModal(modalHtml);
-        
+
         document.getElementById('group-form').addEventListener('submit', (e) => this.handleGroupFormSubmit(e, group));
         document.getElementById('cancel-btn').onclick = () => this.app.hideModal();
     }
@@ -161,10 +161,10 @@ class GroupsManagement {
         const name = document.getElementById('group-name').value;
         const description = document.getElementById('group-description').value;
         const color = document.getElementById('group-color').value;
-        
+
         try {
             const groupData = { name, description, color };
-            
+
             if (group) {
                 await this.app.api.put(`/groups/${groupId}`, groupData);
                 this.app.showToast('Group updated successfully', 'success');
@@ -172,7 +172,7 @@ class GroupsManagement {
                 await this.app.api.post('/groups', groupData);
                 this.app.showToast('Group created successfully', 'success');
             }
-            
+
             this.app.hideModal();
             this.render();
         } catch (error) {
@@ -196,7 +196,7 @@ class GroupsManagement {
                 </div>
             </div>
         `;
-        
+
         this.app.showModal(modalHtml);
         document.getElementById('close-modal').onclick = () => this.app.hideModal();
     }

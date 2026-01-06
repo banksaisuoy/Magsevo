@@ -9,23 +9,23 @@ class SystemHealthManagement {
     // Render System Health Management
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         try {
             const [healthResponse, metricsResponse, alertsResponse] = await Promise.all([
                 this.app.api.get('/health/overview'),
                 this.app.api.get('/health/metrics'),
                 this.app.api.get('/health/alerts')
             ]);
-            
+
             const health = healthResponse.success ? healthResponse.overview : {};
             const metrics = metricsResponse.success ? metricsResponse.metrics : {};
             const alerts = alertsResponse.success ? alertsResponse.alerts : [];
-            
-            const healthStatusColor = health.overall === 'healthy' ? 'text-green-600' : 
+
+            const healthStatusColor = health.overall === 'healthy' ? 'text-green-600' :
                                     health.overall === 'degraded' ? 'text-yellow-600' : 'text-red-600';
-            const healthBadgeColor = health.overall === 'healthy' ? 'badge-success' : 
+            const healthBadgeColor = health.overall === 'healthy' ? 'badge-success' :
                                    health.overall === 'degraded' ? 'badge-warning' : 'badge-danger';
-            
+
             const healthHtml = `
                 <div class="space-y-6">
                     <div class="flex justify-between items-center">
@@ -36,7 +36,7 @@ class SystemHealthManagement {
                             <button id="start-monitoring-btn" class="btn btn-success">Start Monitoring</button>
                         </div>
                     </div>
-                    
+
                     <!-- Overall Health Status -->
                     <div class="card ${health.overall === 'healthy' ? 'border-success' : health.overall === 'degraded' ? 'border-warning' : 'border-danger'}">
                         <div class="flex items-center justify-between mb-4">
@@ -48,7 +48,7 @@ class SystemHealthManagement {
                                 Last checked: ${health.lastChecked ? new Date(health.lastChecked).toLocaleString() : 'Never'}
                             </div>
                         </div>
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="metric-card">
                                 <h5 class="font-medium text-sm text-muted">System Performance</h5>
@@ -77,7 +77,7 @@ class SystemHealthManagement {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Alerts Section -->
                     ${alerts.length > 0 ? `
                         <div class="card border-warning">
@@ -97,7 +97,7 @@ class SystemHealthManagement {
                             </div>
                         </div>
                     ` : ''}
-                    
+
                     <!-- Detailed Metrics -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="card">
@@ -125,7 +125,7 @@ class SystemHealthManagement {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="card">
                             <h4 class="text-lg font-semibold mb-3">Database Status</h4>
                             <div class="space-y-3">
@@ -154,7 +154,7 @@ class SystemHealthManagement {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- API Management Section -->
                     <div class="card">
                         <h4 class="text-lg font-semibold mb-3">API Performance</h4>
@@ -173,7 +173,7 @@ class SystemHealthManagement {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- External Services -->
                     <div class="card">
                         <h4 class="text-lg font-semibold mb-3">External Services</h4>
@@ -181,21 +181,21 @@ class SystemHealthManagement {
                             <div class="service-status">
                                 <div class="flex items-center justify-between">
                                     <span class="font-medium">Google Gemini AI</span>
-                                    <span class="badge ${metrics.externalServices?.geminiAI?.status === 'healthy' ? 'badge-success' : 
+                                    <span class="badge ${metrics.externalServices?.geminiAI?.status === 'healthy' ? 'badge-success' :
                                                           metrics.externalServices?.geminiAI?.status === 'configured' ? 'badge-info' : 'badge-warning'}">
                                         ${metrics.externalServices?.geminiAI?.status?.toUpperCase() || 'UNKNOWN'}
                                     </span>
                                 </div>
-                                ${metrics.externalServices?.geminiAI?.lastTest ? 
+                                ${metrics.externalServices?.geminiAI?.lastTest ?
                                     `<p class="text-sm text-muted">Last tested: ${new Date(metrics.externalServices.geminiAI.lastTest).toLocaleString()}</p>` : ''}
                             </div>
                         </div>
                     </div>
                 </div>
             `;
-            
+
             adminContent.innerHTML = healthHtml;
-            
+
             // Event listeners
             this.setupEventHandlers();
         } catch (error) {
@@ -217,7 +217,7 @@ class SystemHealthManagement {
                 this.app.showLoading(false);
             }
         });
-        
+
         document.getElementById('export-health-btn').addEventListener('click', async () => {
             try {
                 const response = await this.app.api.get('/health/export?format=csv');
@@ -238,7 +238,7 @@ class SystemHealthManagement {
                 this.app.showToast('Failed to export health report', 'error');
             }
         });
-        
+
         document.getElementById('start-monitoring-btn').addEventListener('click', async () => {
             try {
                 await this.app.api.post('/health/monitoring/start');

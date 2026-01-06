@@ -50,9 +50,9 @@ router.post('/categorize', authenticateToken, requireAdmin, async (req, res) => 
     try {
         // Check if AI service is initialized
         if (!aiService.initialized) {
-            return res.status(503).json({ 
-                success: false, 
-                error: 'AI service not available - API key may be invalid or missing' 
+            return res.status(503).json({
+                success: false,
+                error: 'AI service not available - API key may be invalid or missing'
             });
         }
 
@@ -80,7 +80,7 @@ router.post('/categorize', authenticateToken, requireAdmin, async (req, res) => 
         }
 
         const result = await aiService.categorizeVideo(videoData);
-        
+
         // Return success: true only if the AI operation was successful
         if (result.success) {
             res.json({
@@ -105,9 +105,9 @@ router.post('/tags', authenticateToken, requireAdmin, async (req, res) => {
     try {
         // Check if AI service is initialized
         if (!aiService.initialized) {
-            return res.status(503).json({ 
-                success: false, 
-                error: 'AI service not available - API key may be invalid or missing' 
+            return res.status(503).json({
+                success: false,
+                error: 'AI service not available - API key may be invalid or missing'
             });
         }
 
@@ -134,7 +134,7 @@ router.post('/tags', authenticateToken, requireAdmin, async (req, res) => {
         }
 
         const result = await aiService.generateTags(videoData);
-        
+
         // Return success: true only if the AI operation was successful
         if (result.success) {
             res.json({
@@ -159,9 +159,9 @@ router.post('/analyze', authenticateToken, requireAdmin, async (req, res) => {
     try {
         // Check if AI service is initialized
         if (!aiService.initialized) {
-            return res.status(503).json({ 
-                success: false, 
-                error: 'AI service not available - API key may be invalid or missing' 
+            return res.status(503).json({
+                success: false,
+                error: 'AI service not available - API key may be invalid or missing'
             });
         }
 
@@ -188,7 +188,7 @@ router.post('/analyze', authenticateToken, requireAdmin, async (req, res) => {
         }
 
         const result = await aiService.analyzeContent(videoData);
-        
+
         // Return success: true only if the AI operation was successful
         if (result.success) {
             res.json({
@@ -213,9 +213,9 @@ router.post('/summary', authenticateToken, requireAdmin, async (req, res) => {
     try {
         // Check if AI service is initialized
         if (!aiService.initialized) {
-            return res.status(503).json({ 
-                success: false, 
-                error: 'AI service not available - API key may be invalid or missing' 
+            return res.status(503).json({
+                success: false,
+                error: 'AI service not available - API key may be invalid or missing'
             });
         }
 
@@ -242,7 +242,7 @@ router.post('/summary', authenticateToken, requireAdmin, async (req, res) => {
         }
 
         const result = await aiService.generateSummary(videoData);
-        
+
         // Return success: true only if the AI operation was successful
         if (result.success) {
             res.json({
@@ -267,9 +267,9 @@ router.post('/metadata', authenticateToken, requireAdmin, async (req, res) => {
     try {
         // Check if AI service is initialized
         if (!aiService.initialized) {
-            return res.status(503).json({ 
-                success: false, 
-                error: 'AI service not available - API key may be invalid or missing' 
+            return res.status(503).json({
+                success: false,
+                error: 'AI service not available - API key may be invalid or missing'
             });
         }
 
@@ -296,7 +296,7 @@ router.post('/metadata', authenticateToken, requireAdmin, async (req, res) => {
         }
 
         const result = await aiService.generateMetadata(videoData);
-        
+
         // Return success: true only if the AI operation was successful
         if (result.success) {
             res.json({
@@ -321,9 +321,9 @@ router.post('/batch', authenticateToken, requireAdmin, async (req, res) => {
     try {
         // Check if AI service is initialized
         if (!aiService.initialized) {
-            return res.status(503).json({ 
-                success: false, 
-                error: 'AI service not available - API key may be invalid or missing' 
+            return res.status(503).json({
+                success: false,
+                error: 'AI service not available - API key may be invalid or missing'
             });
         }
 
@@ -353,7 +353,7 @@ router.post('/batch', authenticateToken, requireAdmin, async (req, res) => {
         }
 
         const result = await aiService.batchProcess(videos, operations);
-        
+
         // Return success: true only if the AI operation was successful
         if (result.success) {
             res.json({
@@ -379,7 +379,7 @@ router.post('/batch', authenticateToken, requireAdmin, async (req, res) => {
 router.post('/auto-categorize/:videoId', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { videoId } = req.params;
-        
+
         // Check if database is available
         const db = req.app.get('db');
         if (!db) {
@@ -392,11 +392,11 @@ router.post('/auto-categorize/:videoId', authenticateToken, requireAdmin, async 
         }
 
         const categorization = await aiService.categorizeVideo(video);
-        
+
         if (categorization.success) {
             // Try to find matching category in database
             const categories = await db.all('SELECT * FROM categories');
-            const matchingCategory = categories.find(cat => 
+            const matchingCategory = categories.find(cat =>
                 cat.name.toLowerCase() === categorization.category.toLowerCase()
             );
 
@@ -438,7 +438,7 @@ router.post('/auto-categorize/:videoId', authenticateToken, requireAdmin, async 
 router.post('/auto-tag/:videoId', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { videoId } = req.params;
-        
+
         // Check if database is available
         const db = req.app.get('db');
         if (!db) {
@@ -451,16 +451,16 @@ router.post('/auto-tag/:videoId', authenticateToken, requireAdmin, async (req, r
         }
 
         const tagging = await aiService.generateTags(video);
-        
+
         if (tagging.success && tagging.tags.length > 0) {
             const appliedTags = [];
-            
+
             // Create or find tags and apply them to the video
             for (const tagName of tagging.tags) {
                 try {
                     // Try to find existing tag
                     let tag = await db.get('SELECT * FROM tags WHERE name = ?', [tagName]);
-                    
+
                     if (!tag) {
                         // Create new tag
                         const result = await Tag.create(db, { name: tagName });

@@ -9,16 +9,16 @@ class BackupSystemManagement {
     // Render Backup System Management
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         try {
             const [statusResponse, backupsResponse] = await Promise.all([
                 this.app.api.get('/backups/status'),
                 this.app.api.get('/backups/list')
             ]);
-            
+
             const backupStatus = statusResponse.success ? statusResponse.backup : {};
             const backupsList = backupsResponse.success ? backupsResponse.backups.backups : [];
-            
+
             const backupHtml = `
                 <div class="space-y-6">
                     <div class="flex justify-between items-center">
@@ -30,7 +30,7 @@ class BackupSystemManagement {
                             <button id="refresh-backups-btn" class="btn btn-info">Refresh</button>
                         </div>
                     </div>
-                    
+
                     <!-- Backup Status -->
                     <div class="card">
                         <h4 class="text-lg font-semibold mb-3">Backup System Status</h4>
@@ -53,7 +53,7 @@ class BackupSystemManagement {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Backup List -->
                     <div class="card">
                         <div class="flex justify-between items-center mb-3">
@@ -62,7 +62,7 @@ class BackupSystemManagement {
                                 Showing latest 20 backups
                             </div>
                         </div>
-                        
+
                         ${backupsList.length > 0 ? `
                             <div class="table-container">
                                 <table class="table">
@@ -88,7 +88,7 @@ class BackupSystemManagement {
                                                 <td>${new Date(backup.created).toLocaleString()}</td>
                                                 <td class="text-right">
                                                     <div class="action-buttons">
-                                                        ${backup.type === 'database' ? 
+                                                        ${backup.type === 'database' ?
                                                             `<button class="btn btn-sm btn-info restore-backup-btn" data-filename="${backup.filename}">Restore</button>` : ''}
                                                         <button class="btn btn-sm btn-danger delete-backup-btn" data-filename="${backup.filename}">Delete</button>
                                                     </div>
@@ -105,7 +105,7 @@ class BackupSystemManagement {
                             </div>
                         `}
                     </div>
-                    
+
                     <!-- Results Display -->
                     <div id="backup-results" class="hidden">
                         <div class="card">
@@ -115,9 +115,9 @@ class BackupSystemManagement {
                     </div>
                 </div>
             `;
-            
+
             adminContent.innerHTML = backupHtml;
-            
+
             // Event listeners
             this.setupEventHandlers();
         } catch (error) {
@@ -145,7 +145,7 @@ class BackupSystemManagement {
                 this.app.showLoading(false);
             }
         });
-        
+
         // Backup files button
         document.getElementById('backup-files-btn').addEventListener('click', async () => {
             try {
@@ -163,7 +163,7 @@ class BackupSystemManagement {
                 this.app.showLoading(false);
             }
         });
-        
+
         // Full backup button
         document.getElementById('backup-full-btn').addEventListener('click', async () => {
             try {
@@ -181,7 +181,7 @@ class BackupSystemManagement {
                 this.app.showLoading(false);
             }
         });
-        
+
         // Refresh backups button
         document.getElementById('refresh-backups-btn').addEventListener('click', async () => {
             try {
@@ -194,12 +194,12 @@ class BackupSystemManagement {
                 this.app.showLoading(false);
             }
         });
-        
+
         // Restore backup buttons
         document.querySelectorAll('.restore-backup-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const filename = e.currentTarget.dataset.filename;
-                
+
                 this.app.showConfirmationModal(
                     `Are you sure you want to restore the database from backup "${filename}"? This will overwrite the current database.`,
                     async () => {
@@ -221,12 +221,12 @@ class BackupSystemManagement {
                 );
             });
         });
-        
+
         // Delete backup buttons
         document.querySelectorAll('.delete-backup-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const filename = e.currentTarget.dataset.filename;
-                
+
                 this.app.showConfirmationModal(
                     `Are you sure you want to delete backup "${filename}"? This action cannot be undone.`,
                     async () => {
@@ -250,18 +250,18 @@ class BackupSystemManagement {
             });
         });
     }
-    
+
     // Display Backup Results
     displayBackupResults(title, response) {
         const resultsDiv = document.getElementById('backup-results');
         const contentDiv = document.getElementById('backup-results-content');
-        
+
         let resultHtml = `<h5 class="font-semibold mb-2">${title} Results</h5>`;
-        
+
         if (response.success) {
             resultHtml += '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-3">';
             resultHtml += '<p class="font-bold">Success!</p>';
-            
+
             if (response.backup) {
                 const backup = response.backup;
                 if (backup.filename) {
@@ -277,11 +277,11 @@ class BackupSystemManagement {
                     resultHtml += `<p>Restored from: <span class="font-mono text-sm">${backup.restoredFrom}</span></p>`;
                 }
             }
-            
+
             if (response.message) {
                 resultHtml += `<p>${response.message}</p>`;
             }
-            
+
             resultHtml += '</div>';
         } else {
             resultHtml += '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-3">';
@@ -289,10 +289,10 @@ class BackupSystemManagement {
             resultHtml += `<p>${response.error || 'Unknown error occurred'}</p>`;
             resultHtml += '</div>';
         }
-        
+
         contentDiv.innerHTML = resultHtml;
         resultsDiv.classList.remove('hidden');
-        
+
         // Scroll to results
         resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }

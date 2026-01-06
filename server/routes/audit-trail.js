@@ -46,10 +46,10 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const { limit } = req.query;
-        
+
         const auditLimit = parseInt(limit) || 100;
         const auditTrails = await AuditTrail.getAll(db, auditLimit);
-        
+
         res.json({ success: true, auditTrails });
     } catch (error) {
         console.error('Get audit trails error:', error);
@@ -63,15 +63,15 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
         const db = await initDatabase();
         const { userId } = req.params;
         const { limit } = req.query;
-        
+
         // Users can only access their own audit trail unless admin
         if (req.user.role !== 'admin' && req.user.username !== userId) {
             return res.status(403).json({ error: 'Access denied' });
         }
-        
+
         const auditLimit = parseInt(limit) || 50;
         const auditTrails = await AuditTrail.getByUser(db, userId, auditLimit);
-        
+
         res.json({ success: true, auditTrails });
     } catch (error) {
         console.error('Get user audit trails error:', error);
@@ -85,10 +85,10 @@ router.get('/resource/:resourceType/:resourceId', authenticateToken, requireAdmi
         const db = await initDatabase();
         const { resourceType, resourceId } = req.params;
         const { limit } = req.query;
-        
+
         const auditLimit = parseInt(limit) || 50;
         const auditTrails = await AuditTrail.getByResource(db, resourceType, resourceId, auditLimit);
-        
+
         res.json({ success: true, auditTrails });
     } catch (error) {
         console.error('Get resource audit trails error:', error);
@@ -100,27 +100,27 @@ router.get('/resource/:resourceType/:resourceId', authenticateToken, requireAdmi
 router.get('/search', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
-        const { 
-            userId, 
-            action, 
-            resource_type, 
-            dateFrom, 
-            dateTo, 
-            limit 
+        const {
+            userId,
+            action,
+            resource_type,
+            dateFrom,
+            dateTo,
+            limit
         } = req.query;
-        
+
         const filters = {};
         if (userId) filters.userId = userId;
         if (action) filters.action = action;
         if (resource_type) filters.resource_type = resource_type;
         if (dateFrom) filters.dateFrom = dateFrom;
         if (dateTo) filters.dateTo = dateTo;
-        
+
         const auditLimit = parseInt(limit) || 100;
         const auditTrails = await AuditTrail.search(db, filters, auditLimit);
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             auditTrails,
             filters: filters
         });
@@ -134,22 +134,22 @@ router.get('/search', authenticateToken, requireAdmin, async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
     try {
         const db = await initDatabase();
-        const { 
-            action, 
-            resource_type, 
-            resource_id, 
-            old_values, 
-            new_values 
+        const {
+            action,
+            resource_type,
+            resource_id,
+            old_values,
+            new_values
         } = req.body;
-        
+
         if (!action || !resource_type) {
             return res.status(400).json({ error: 'Action and resource type are required' });
         }
-        
+
         // Get IP address and user agent from request
         const ip_address = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'];
         const user_agent = req.headers['user-agent'];
-        
+
         const auditData = {
             userId: req.user.username,
             action,
@@ -160,11 +160,11 @@ router.post('/', authenticateToken, async (req, res) => {
             ip_address,
             user_agent
         };
-        
+
         const result = await AuditTrail.create(db, auditData);
-        
-        res.status(201).json({ 
-            success: true, 
+
+        res.status(201).json({
+            success: true,
             message: 'Audit trail entry created successfully',
             auditId: result.id
         });
@@ -178,10 +178,10 @@ router.post('/', authenticateToken, async (req, res) => {
 router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
-        
+
         // Get total count
         const totalResult = await db.get('SELECT COUNT(*) as total FROM audit_trail');
-        
+
         // Get count by action type
         const actionStats = await db.all(`
             SELECT action, COUNT(*) as count
@@ -189,7 +189,7 @@ router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
             GROUP BY action
             ORDER BY count DESC
         `);
-        
+
         // Get count by resource type
         const resourceStats = await db.all(`
             SELECT resource_type, COUNT(*) as count
@@ -197,7 +197,7 @@ router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
             GROUP BY resource_type
             ORDER BY count DESC
         `);
-        
+
         // Get most active users
         const userStats = await db.all(`
             SELECT at.userId, u.username, COUNT(*) as action_count
@@ -207,14 +207,14 @@ router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
             ORDER BY action_count DESC
             LIMIT 10
         `);
-        
+
         // Get recent activity (last 24 hours)
         const recentActivity = await db.get(`
             SELECT COUNT(*) as recent_count
             FROM audit_trail
             WHERE created_at >= datetime('now', '-1 day')
         `);
-        
+
         res.json({
             success: true,
             stats: {
@@ -235,7 +235,7 @@ router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
 router.get('/export', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
-        const { 
+        const {
             format = 'json',
             dateFrom,
             dateTo,
@@ -244,17 +244,17 @@ router.get('/export', authenticateToken, requireAdmin, async (req, res) => {
             resource_type,
             limit = 1000
         } = req.query;
-        
+
         const filters = {};
         if (userId) filters.userId = userId;
         if (action) filters.action = action;
         if (resource_type) filters.resource_type = resource_type;
         if (dateFrom) filters.dateFrom = dateFrom;
         if (dateTo) filters.dateTo = dateTo;
-        
+
         const auditLimit = parseInt(limit);
         const auditTrails = await AuditTrail.search(db, filters, auditLimit);
-        
+
         if (format === 'csv') {
             // Generate CSV format
             const csvHeader = 'Timestamp,User,Action,Resource Type,Resource ID,IP Address,User Agent\n';
@@ -269,7 +269,7 @@ router.get('/export', authenticateToken, requireAdmin, async (req, res) => {
                     audit.user_agent || ''
                 ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(',');
             }).join('\n');
-            
+
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', `attachment; filename="audit_trail_${new Date().toISOString().split('T')[0]}.csv"`);
             res.send(csvHeader + csvData);

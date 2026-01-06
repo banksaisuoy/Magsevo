@@ -65,7 +65,7 @@ class APIManager {
             const originalEnd = res.end;
             res.end = (...args) => {
                 const responseTime = Date.now() - startTime;
-                
+
                 // Track response time
                 this.responseTimes.push({
                     path: req.path,
@@ -86,7 +86,7 @@ class APIManager {
                 }
 
                 this.activeConnections--;
-                
+
                 // Call original end method
                 originalEnd.apply(res, args);
             };
@@ -99,7 +99,7 @@ class APIManager {
     validateApiKey() {
         return (req, res, next) => {
             const apiKey = req.headers['x-api-key'];
-            
+
             // Skip API key validation for certain endpoints
             if (req.path.includes('/auth/') || req.path === '/api/health') {
                 return next();
@@ -122,10 +122,10 @@ class APIManager {
             res.setHeader('X-Frame-Options', 'DENY');
             res.setHeader('X-XSS-Protection', '1; mode=block');
             res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-            
+
             // API versioning header
             res.setHeader('API-Version', '1.0');
-            
+
             next();
         };
     }
@@ -139,11 +139,11 @@ class APIManager {
     getStatistics() {
         const now = Date.now();
         const oneHourAgo = now - (60 * 60 * 1000);
-        
+
         // Calculate recent response times
         const recentResponses = this.responseTimes.filter(r => r.timestamp.getTime() > oneHourAgo);
-        const avgResponseTime = recentResponses.length > 0 
-            ? recentResponses.reduce((sum, r) => sum + r.responseTime, 0) / recentResponses.length 
+        const avgResponseTime = recentResponses.length > 0
+            ? recentResponses.reduce((sum, r) => sum + r.responseTime, 0) / recentResponses.length
             : 0;
 
         // Count recent errors
@@ -176,12 +176,12 @@ class APIManager {
     // Get detailed metrics for monitoring
     getDetailedMetrics() {
         const stats = this.getStatistics();
-        
+
         // Response time percentiles
         const sortedTimes = this.responseTimes
             .map(r => r.responseTime)
             .sort((a, b) => a - b);
-            
+
         const percentiles = {
             p50: this.getPercentile(sortedTimes, 50),
             p90: this.getPercentile(sortedTimes, 90),
@@ -215,7 +215,7 @@ class APIManager {
     getRequestTrends() {
         const now = new Date();
         const trends = {};
-        
+
         // Group by hour for the last 24 hours
         for (let i = 23; i >= 0; i--) {
             const hour = new Date(now.getTime() - (i * 60 * 60 * 1000));

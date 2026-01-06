@@ -8,18 +8,18 @@ class PermissionsManagement {
 
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         try {
             const [permissionsResponse, groupsResponse, usersResponse] = await Promise.all([
                 this.app.api.get('/permissions'),
                 this.app.api.get('/groups'),
                 this.app.api.get('/users')
             ]);
-            
+
             const permissions = permissionsResponse.success ? permissionsResponse.permissions : {};
             const groups = groupsResponse.success ? groupsResponse.groups : [];
             const users = usersResponse.success ? usersResponse.users : [];
-            
+
             const permissionsHtml = `
                 <div class="space-y-6">
                     <div class="flex justify-between items-center">
@@ -29,7 +29,7 @@ class PermissionsManagement {
                             <button id="manage-group-permissions-btn" class="btn btn-secondary">Manage Group Permissions</button>
                         </div>
                     </div>
-                    
+
                     ${Object.keys(permissions).map(category => `
                         <div class="card">
                             <h4 class="text-lg font-semibold mb-3 capitalize">${category} Permissions</h4>
@@ -45,9 +45,9 @@ class PermissionsManagement {
                     `).join('')}
                 </div>
             `;
-            
+
             adminContent.innerHTML = permissionsHtml;
-            
+
             // Event listeners
             document.getElementById('manage-user-permissions-btn').addEventListener('click', () => {
                 this.showUserPermissionsModal(users, permissions);
@@ -74,7 +74,7 @@ class PermissionsManagement {
                 </div>
             </div>
         `;
-        
+
         this.app.showModal(modalHtml);
         document.getElementById('close-modal').onclick = () => this.app.hideModal();
     }
@@ -92,7 +92,7 @@ class PermissionsManagement {
                 </div>
             </div>
         `;
-        
+
         this.app.showModal(modalHtml);
         document.getElementById('close-modal').onclick = () => this.app.hideModal();
     }

@@ -58,41 +58,41 @@ router.post('/', authenticateToken, async (req, res) => {
     try {
         const db = await initDatabase();
         const { videoId, reason, customReason } = req.body;
-        
+
         if (!videoId || !reason || reason.trim().length === 0) {
             return res.status(400).json({ error: 'Video ID and reason are required' });
         }
-        
+
         // Check if video exists
         const video = await db.get('SELECT * FROM videos WHERE id = ?', [videoId]);
         if (!video) {
             return res.status(404).json({ error: 'Video not found' });
         }
-        
+
         // Check if user already reported this video
         const existingReport = await db.get(
             'SELECT * FROM reports WHERE userId = ? AND videoId = ?',
             [req.user.username, videoId]
         );
-        
+
         if (existingReport) {
             return res.status(409).json({ error: 'You have already reported this video' });
         }
-        
+
         // Insert report with custom reason if provided
         const result = await db.run(
             'INSERT INTO reports (userId, videoId, reason, custom_reason) VALUES (?, ?, ?, ?)',
             [req.user.username, videoId, reason.trim(), customReason ? customReason.trim() : null]
         );
-        
-        await Log.create(db, req.user.username, 'Report Video', 
+
+        await Log.create(db, req.user.username, 'Report Video',
             `Reported video ID: ${videoId}, Reason: ${reason.trim()}${customReason ? `, Custom: ${customReason.trim()}` : ''}`
         );
-        
-        res.status(201).json({ 
-            success: true, 
+
+        res.status(201).json({
+            success: true,
             message: 'Report submitted successfully',
-            reportId: result.id 
+            reportId: result.id
         });
     } catch (error) {
         console.error('Create report error:', error);
@@ -105,16 +105,16 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const { id } = req.params;
-        
+
         // Check if report exists
         const report = await db.get('SELECT * FROM reports WHERE id = ?', [id]);
         if (!report) {
             return res.status(404).json({ error: 'Report not found' });
         }
-        
+
         await Report.delete(db, id);
         await Log.create(db, req.user.username, 'Resolve Report', `Resolved report ID: ${id}`);
-        
+
         res.json({ success: true, message: 'Report resolved successfully' });
     } catch (error) {
         console.error('Resolve report error:', error);

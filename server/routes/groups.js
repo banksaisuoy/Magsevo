@@ -47,13 +47,13 @@ function checkPermission(permission) {
         try {
             const db = await initDatabase();
             const userPermissions = await Permission.getUserPermissions(db, req.user.username);
-            
+
             const hasPermission = userPermissions.some(p => p.name === permission) || req.user.role === 'admin';
-            
+
             if (!hasPermission) {
                 return res.status(403).json({ error: `Permission required: ${permission}` });
             }
-            
+
             next();
         } catch (error) {
             console.error('Permission check error:', error);
@@ -83,17 +83,17 @@ router.get('/:id', authenticateToken, checkPermission('group.view'), async (req,
     try {
         const db = await initDatabase();
         const { id } = req.params;
-        
+
         const group = await UserGroup.getById(db, id);
         if (!group) {
             return res.status(404).json({ error: 'Group not found' });
         }
-        
+
         const members = await UserGroup.getMembers(db, id);
-        
-        res.json({ 
-            success: true, 
-            group: { ...group, members } 
+
+        res.json({
+            success: true,
+            group: { ...group, members }
         });
     } catch (error) {
         console.error('Get group error:', error);
@@ -106,25 +106,25 @@ router.post('/', authenticateToken, checkPermission('group.create'), async (req,
     try {
         const db = await initDatabase();
         const { name, description, color } = req.body;
-        
+
         if (!name || name.trim().length === 0) {
             return res.status(400).json({ error: 'Group name is required' });
         }
-        
+
         const groupData = {
             name: name.trim(),
             description: description?.trim() || '',
             color: color || '#2a9d8f',
             created_by: req.user.username
         };
-        
+
         const result = await UserGroup.create(db, groupData);
         await Log.create(db, req.user.username, 'Create Group', `Created group: ${name}`);
-        
-        res.status(201).json({ 
-            success: true, 
+
+        res.status(201).json({
+            success: true,
             message: 'Group created successfully',
-            groupId: result.id 
+            groupId: result.id
         });
     } catch (error) {
         if (error.message.includes('UNIQUE constraint failed')) {
@@ -141,26 +141,26 @@ router.put('/:id', authenticateToken, checkPermission('group.edit'), async (req,
         const db = await initDatabase();
         const { id } = req.params;
         const { name, description, color } = req.body;
-        
+
         // Check if group exists
         const existingGroup = await UserGroup.getById(db, id);
         if (!existingGroup) {
             return res.status(404).json({ error: 'Group not found' });
         }
-        
+
         if (!name || name.trim().length === 0) {
             return res.status(400).json({ error: 'Group name is required' });
         }
-        
+
         const groupData = {
             name: name.trim(),
             description: description?.trim() || '',
             color: color || '#2a9d8f'
         };
-        
+
         await UserGroup.update(db, id, groupData);
         await Log.create(db, req.user.username, 'Update Group', `Updated group: ${name}`);
-        
+
         res.json({ success: true, message: 'Group updated successfully' });
     } catch (error) {
         if (error.message.includes('UNIQUE constraint failed')) {
@@ -176,16 +176,16 @@ router.delete('/:id', authenticateToken, checkPermission('group.delete'), async 
     try {
         const db = await initDatabase();
         const { id } = req.params;
-        
+
         // Check if group exists
         const existingGroup = await UserGroup.getById(db, id);
         if (!existingGroup) {
             return res.status(404).json({ error: 'Group not found' });
         }
-        
+
         await UserGroup.delete(db, id);
         await Log.create(db, req.user.username, 'Delete Group', `Deleted group: ${existingGroup.name}`);
-        
+
         res.json({ success: true, message: 'Group deleted successfully' });
     } catch (error) {
         console.error('Delete group error:', error);
@@ -199,27 +199,27 @@ router.post('/:id/members', authenticateToken, checkPermission('group.manage_mem
         const db = await initDatabase();
         const { id } = req.params;
         const { username, role } = req.body;
-        
+
         if (!username) {
             return res.status(400).json({ error: 'Username is required' });
         }
-        
+
         // Check if group exists
         const group = await UserGroup.getById(db, id);
         if (!group) {
             return res.status(404).json({ error: 'Group not found' });
         }
-        
+
         // Check if user exists
         const User = require('../models/index').User;
         const user = await User.findByUsername(db, username);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
+
         await UserGroup.addMember(db, id, username, role || 'member', req.user.username);
         await Log.create(db, req.user.username, 'Add Group Member', `Added ${username} to group: ${group.name}`);
-        
+
         res.json({ success: true, message: 'Member added to group successfully' });
     } catch (error) {
         console.error('Add member error:', error);
@@ -232,16 +232,16 @@ router.delete('/:id/members/:username', authenticateToken, checkPermission('grou
     try {
         const db = await initDatabase();
         const { id, username } = req.params;
-        
+
         // Check if group exists
         const group = await UserGroup.getById(db, id);
         if (!group) {
             return res.status(404).json({ error: 'Group not found' });
         }
-        
+
         await UserGroup.removeMember(db, id, username);
         await Log.create(db, req.user.username, 'Remove Group Member', `Removed ${username} from group: ${group.name}`);
-        
+
         res.json({ success: true, message: 'Member removed from group successfully' });
     } catch (error) {
         console.error('Remove member error:', error);
@@ -254,12 +254,12 @@ router.get('/user/:username', authenticateToken, async (req, res) => {
     try {
         const db = await initDatabase();
         const { username } = req.params;
-        
+
         // Users can only view their own groups, admins can view any
         if (req.user.role !== 'admin' && req.user.username !== username) {
             return res.status(403).json({ error: 'Access denied' });
         }
-        
+
         const groups = await UserGroup.getUserGroups(db, username);
         res.json({ success: true, groups });
     } catch (error) {

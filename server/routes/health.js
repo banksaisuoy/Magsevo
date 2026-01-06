@@ -48,7 +48,7 @@ router.get('/status', authenticateToken, requireAdmin, async (req, res) => {
 router.get('/overview', authenticateToken, requireAdmin, async (req, res) => {
     try {
         let overview;
-        
+
         if (healthMonitor.lastCheck) {
             const lastCheck = healthMonitor.lastCheck;
             overview = {
@@ -167,7 +167,7 @@ router.get('/history', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { limit } = req.query;
         const historyLimit = parseInt(limit) || 20;
-        
+
         const history = healthMonitor.getHealthHistory(historyLimit);
         res.json({
             success: true,
@@ -244,7 +244,7 @@ router.get('/export', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { format = 'json', limit } = req.query;
         const historyLimit = parseInt(limit) || 50;
-        
+
         const healthData = {
             exportedAt: new Date().toISOString(),
             currentStatus: healthMonitor.lastCheck,
@@ -255,7 +255,7 @@ router.get('/export', authenticateToken, requireAdmin, async (req, res) => {
         if (format === 'csv') {
             // Convert to CSV format
             let csv = 'Timestamp,Overall,CPU Usage,Memory Usage,DB Response Time,DB Status,App Status\n';
-            
+
             healthData.history.forEach(check => {
                 csv += [
                     check.timestamp,

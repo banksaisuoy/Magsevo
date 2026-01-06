@@ -8,9 +8,9 @@ class VideoManagement {
 
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         const videos = this.app.state.allVideos;
-        
+
         const tableHtml = `
             <div class="flex justify-end mb-4">
                 <button id="add-video-btn" class="btn btn-primary">Add New Video</button>
@@ -54,9 +54,9 @@ class VideoManagement {
                 </table>
             </div>
         `;
-        
+
         adminContent.innerHTML = tableHtml;
-        
+
         document.getElementById('add-video-btn').addEventListener('click', () => this.showVideoForm());
         document.querySelectorAll('.edit-video-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.handleEditVideo(e));
@@ -76,7 +76,7 @@ class VideoManagement {
 
     async handleDeleteVideo(event) {
         const videoId = event.currentTarget.dataset.id;
-        
+
         this.app.showConfirmationModal(
             'Are you sure you want to delete this video?',
             async () => {
@@ -97,20 +97,14 @@ class VideoManagement {
         try {
             const response = await this.app.api.get('/categories');
             const categories = response.success ? response.categories : [];
-            
-            // Handle case where no categories exist
-            if (categories.length === 0) {
-                this.app.showToast('No categories found. Please create a category first.', 'warning');
-                return;
-            }
-            
+
             const formTitle = video ? 'Edit Video' : 'Add New Video';
             const modalHtml = `
                 <div class="modal-content" style="max-width: 40rem;">
                     <h3 class="modal-title">${formTitle}</h3>
                     <form id="video-form" class="space-y-4">
                         <input type="hidden" id="video-id" value="${video ? video.id : ''}">
-                        
+
                         <!-- Video Upload Method Toggle -->
                         <div class="form-group">
                             <label class="form-label">Video Source</label>
@@ -128,25 +122,21 @@ class VideoManagement {
 
                         <div class="form-group">
                             <label for="form-title" class="form-label">Video Title</label>
-                            <input type="text" id="form-title" value="${video ? this.escapeHtml(video.title) : ''}" class="form-input" required>
+                            <input type="text" id="form-title" value="${video ? video.title : ''}" class="form-input" required>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="form-description" class="form-label">Description</label>
-                            <textarea id="form-description" class="form-textarea" rows="3">${video ? this.escapeHtml(video.description) : ''}</textarea>
+                            <textarea id="form-description" class="form-textarea" rows="3" required>${video ? video.description : ''}</textarea>
                         </div>
-                        
+
                         <!-- Video URL Section -->
                         <div class="form-group" id="video-url-section">
                             <label for="form-video-url" class="form-label">Video URL</label>
-                            <input type="url" id="form-video-url" value="${video ? this.escapeHtml(video.videoUrl) : ''}" class="form-input">
+                            <input type="url" id="form-video-url" value="${video ? video.videoUrl : ''}" class="form-input">
                             <small class="text-muted">Supports YouTube, Google Drive, OneDrive, SharePoint, or direct video URLs</small>
-                            <div class="mt-2">
-                                <button type="button" id="test-video-url" class="btn btn-sm btn-secondary">Test URL</button>
-                                <span id="url-test-result" class="ml-2 text-sm"></span>
-                            </div>
                         </div>
-                        
+
                         <!-- Video Upload Section -->
                         <div class="form-group hidden" id="video-upload-section">
                             <label for="form-video-file" class="form-label">Upload Video File</label>
@@ -159,7 +149,7 @@ class VideoManagement {
                                 <span class="progress-text">Uploading...</span>
                             </div>
                         </div>
-                        
+
                         <!-- Thumbnail Upload Method Toggle -->
                         <div class="form-group">
                             <label class="form-label">Thumbnail Source</label>
@@ -174,13 +164,13 @@ class VideoManagement {
                                 </label>
                             </div>
                         </div>
-                        
+
                         <!-- Thumbnail URL Section -->
                         <div class="form-group" id="thumbnail-url-section">
                             <label for="form-thumbnail-url" class="form-label">Thumbnail URL</label>
-                            <input type="url" id="form-thumbnail-url" value="${video ? this.escapeHtml(video.thumbnailUrl) : ''}" class="form-input">
+                            <input type="url" id="form-thumbnail-url" value="${video ? video.thumbnailUrl : ''}" class="form-input">
                         </div>
-                        
+
                         <!-- Thumbnail Upload Section -->
                         <div class="form-group hidden" id="thumbnail-upload-section">
                             <label for="form-thumbnail-file" class="form-label">Upload Thumbnail</label>
@@ -193,23 +183,23 @@ class VideoManagement {
                                 <span class="progress-text">Uploading...</span>
                             </div>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="form-category" class="form-label">Category</label>
                             <select id="form-category" class="form-select" required>
-                                ${categories.map(cat => 
+                                ${categories.map(cat =>
                                     `<option value="${cat.id}" ${video && video.categoryId == cat.id ? 'selected' : ''}>${cat.name}</option>`
                                 ).join('')}
                             </select>
                         </div>
-                        
+
                         <div class="form-group">
                             <label class="flex items-center">
                                 <input type="checkbox" id="form-is-featured" ${video && video.isFeatured ? 'checked' : ''} class="form-checkbox">
                                 <span class="form-label">Featured Video</span>
                             </label>
                         </div>
-                        
+
                         <div class="modal-footer">
                             <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
                             <button type="submit" class="btn btn-primary">Save</button>
@@ -217,37 +207,18 @@ class VideoManagement {
                     </form>
                 </div>
             `;
-            
+
             this.app.showModal(modalHtml);
-            
+
             // Setup form toggles and event listeners
             this.setupVideoFormHandlers(video);
-            
-            // Add URL testing functionality
-            const testButton = document.getElementById('test-video-url');
-            if (testButton) {
-                testButton.addEventListener('click', () => this.testVideoUrl());
-            }
-            
+
             document.getElementById('video-form').addEventListener('submit', (e) => this.handleVideoFormSubmit(e, video));
             document.getElementById('cancel-btn').onclick = () => this.app.hideModal();
         } catch (error) {
             console.error('Error loading categories:', error);
-            this.app.showToast('Error loading form data: ' + error.message, 'error');
+            this.app.showToast('Error loading form data', 'error');
         }
-    }
-    
-    // Utility function to escape HTML
-    escapeHtml(text) {
-        if (!text) return '';
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
 
     setupVideoFormHandlers(video) {
@@ -255,12 +226,12 @@ class VideoManagement {
         const videoSourceRadios = document.querySelectorAll('input[name="video-source"]');
         const videoUrlSection = document.getElementById('video-url-section');
         const videoUploadSection = document.getElementById('video-upload-section');
-        
+
         // Thumbnail source toggle
         const thumbnailSourceRadios = document.querySelectorAll('input[name="thumbnail-source"]');
         const thumbnailUrlSection = document.getElementById('thumbnail-url-section');
         const thumbnailUploadSection = document.getElementById('thumbnail-upload-section');
-        
+
         const toggleVideoSource = () => {
             const selectedSource = document.querySelector('input[name="video-source"]:checked').value;
             if (selectedSource === 'url') {
@@ -275,7 +246,7 @@ class VideoManagement {
                 document.getElementById('form-video-file').required = !video; // Required only for new videos
             }
         };
-        
+
         const toggleThumbnailSource = () => {
             const selectedSource = document.querySelector('input[name="thumbnail-source"]:checked').value;
             if (selectedSource === 'url') {
@@ -290,166 +261,86 @@ class VideoManagement {
                 document.getElementById('form-thumbnail-file').required = !video; // Required only for new videos
             }
         };
-        
+
         // Initial toggle
         toggleVideoSource();
         toggleThumbnailSource();
-        
+
         // Event listeners
         videoSourceRadios.forEach(radio => {
             radio.addEventListener('change', toggleVideoSource);
         });
-        
+
         thumbnailSourceRadios.forEach(radio => {
             radio.addEventListener('change', toggleThumbnailSource);
         });
     }
 
-    testVideoUrl() {
-        const urlInput = document.getElementById('form-video-url');
-        const resultElement = document.getElementById('url-test-result');
-        const url = urlInput.value.trim();
-        
-        if (!url) {
-            resultElement.textContent = 'Please enter a URL';
-            resultElement.className = 'ml-2 text-sm text-warning';
-            return;
-        }
-        
-        try {
-            // Basic URL validation
-            new URL(url);
-            
-            // Check for supported services
-            if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                resultElement.textContent = 'YouTube URL detected - should work';
-                resultElement.className = 'ml-2 text-sm text-success';
-            } else if (url.includes('drive.google.com')) {
-                resultElement.textContent = 'Google Drive URL detected - should work';
-                resultElement.className = 'ml-2 text-sm text-success';
-            } else if (url.includes('onedrive.live.com') || url.includes('1drv.ms')) {
-                resultElement.textContent = 'OneDrive URL detected - converting to embeddable format';
-                resultElement.className = 'ml-2 text-sm text-success';
-                
-                // Show how the URL will be converted
-                let embedUrl = url;
-                if (url.includes('1drv.ms')) {
-                    embedUrl = url.replace('1drv.ms', 'onedrive.live.com/embed');
-                }
-                if (!embedUrl.includes('/embed') && embedUrl.includes('onedrive.live.com')) {
-                    embedUrl = embedUrl.replace('/view.aspx', '/embed');
-                }
-                
-                const infoElement = document.createElement('div');
-                infoElement.className = 'mt-2 text-xs text-muted';
-                infoElement.innerHTML = `Will be embedded as: <a href="${embedUrl}" target="_blank">${embedUrl}</a>`;
-                resultElement.parentNode.appendChild(infoElement);
-            } else {
-                resultElement.textContent = 'Direct video URL detected - will be embedded directly';
-                resultElement.className = 'ml-2 text-sm text-info';
-            }
-        } catch (error) {
-            resultElement.textContent = 'Invalid URL format';
-            resultElement.className = 'ml-2 text-sm text-error';
-        }
-    }
-
     async handleVideoFormSubmit(event, video) {
         event.preventDefault();
-        
+
         try {
             const videoId = document.getElementById('video-id').value;
-            const title = document.getElementById('form-title').value.trim();
-            const description = document.getElementById('form-description').value.trim();
+            const title = document.getElementById('form-title').value;
+            const description = document.getElementById('form-description').value;
             const categoryId = document.getElementById('form-category').value;
             const isFeatured = document.getElementById('form-is-featured').checked;
-            
-            // Validate required fields
-            if (!title) {
-                throw new Error('Video title is required');
-            }
-            
-            if (!categoryId) {
-                throw new Error('Category is required');
-            }
-            
+
             let videoUrl = '';
             let thumbnailUrl = '';
-            
+
             // Handle video source
             const videoSource = document.querySelector('input[name="video-source"]:checked').value;
             if (videoSource === 'url') {
-                videoUrl = document.getElementById('form-video-url').value.trim();
-                if (!videoUrl) {
-                    throw new Error('Video URL is required');
-                }
-                // Basic URL validation
-                try {
-                    new URL(videoUrl);
-                } catch (e) {
-                    throw new Error('Invalid video URL format');
-                }
+                videoUrl = document.getElementById('form-video-url').value;
             } else {
                 const videoFile = document.getElementById('form-video-file').files[0];
-                if (videoFile) {
-                    // Upload video file
-                    const uploadResult = await this.uploadFiles(videoFile, null);
-                    if (uploadResult.success) {
-                        videoUrl = uploadResult.videoUrl;
+                if (videoFile || video) {
+                    if (videoFile) {
+                        // Upload video file
+                        const uploadResult = await this.uploadFiles(videoFile, null);
+                        if (uploadResult.success) {
+                            videoUrl = uploadResult.videoUrl;
+                        } else {
+                            throw new Error('Video upload failed');
+                        }
                     } else {
-                        throw new Error('Video upload failed');
+                        videoUrl = video.videoUrl; // Keep existing video
                     }
-                } else if (video) {
-                    // Keep existing video URL for updates when no new file is selected
-                    videoUrl = video.videoUrl;
-                } else {
-                    throw new Error('Video URL or file is required');
                 }
             }
-            
+
             // Handle thumbnail source
             const thumbnailSource = document.querySelector('input[name="thumbnail-source"]:checked').value;
             if (thumbnailSource === 'url') {
-                thumbnailUrl = document.getElementById('form-thumbnail-url').value.trim();
-                if (!thumbnailUrl) {
-                    throw new Error('Thumbnail URL is required');
-                }
-                // Basic URL validation
-                try {
-                    new URL(thumbnailUrl);
-                } catch (e) {
-                    throw new Error('Invalid thumbnail URL format');
-                }
+                thumbnailUrl = document.getElementById('form-thumbnail-url').value;
             } else {
                 const thumbnailFile = document.getElementById('form-thumbnail-file').files[0];
-                if (thumbnailFile) {
-                    // Upload thumbnail file
-                    const uploadResult = await this.uploadFiles(null, thumbnailFile);
-                    if (uploadResult.success) {
-                        thumbnailUrl = uploadResult.thumbnailUrl;
+                if (thumbnailFile || video) {
+                    if (thumbnailFile) {
+                        // Upload thumbnail file
+                        const uploadResult = await this.uploadFiles(null, thumbnailFile);
+                        if (uploadResult.success) {
+                            thumbnailUrl = uploadResult.thumbnailUrl;
+                        } else {
+                            throw new Error('Thumbnail upload failed');
+                        }
                     } else {
-                        throw new Error('Thumbnail upload failed');
+                        thumbnailUrl = video.thumbnailUrl; // Keep existing thumbnail
                     }
-                } else if (video) {
-                    // Keep existing thumbnail URL for updates when no new file is selected
-                    thumbnailUrl = video.thumbnailUrl;
-                } else {
-                    throw new Error('Thumbnail URL or file is required');
                 }
             }
-            
+
             const videoData = { title, description, thumbnailUrl, videoUrl, categoryId, isFeatured };
-            
+
             if (video) {
-                // Update existing video
                 await this.app.api.put(`/videos/${videoId}`, videoData);
                 this.app.showToast('Video updated successfully', 'success');
             } else {
-                // Create new video
                 await this.app.api.post('/videos', videoData);
                 this.app.showToast('Video created successfully', 'success');
             }
-            
+
             this.app.hideModal();
             await this.app.loadAllVideos();
             this.render();
@@ -461,14 +352,14 @@ class VideoManagement {
 
     async uploadFiles(videoFile, thumbnailFile) {
         const formData = new FormData();
-        
+
         if (videoFile) {
             formData.append('video', videoFile);
         }
         if (thumbnailFile) {
             formData.append('thumbnail', thumbnailFile);
         }
-        
+
         try {
             // Show progress for file uploads
             if (videoFile) {
@@ -477,31 +368,21 @@ class VideoManagement {
             if (thumbnailFile) {
                 document.getElementById('thumbnail-upload-progress').classList.remove('hidden');
             }
-            
+
             const response = await fetch('/api/uploads/video', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: formData
             });
-            
+
             if (!response.ok) {
-                // Get more detailed error information
-                let errorMessage = `Upload failed: ${response.status} ${response.statusText}`;
-                try {
-                    const errorData = await response.json();
-                    if (errorData.error) {
-                        errorMessage = errorData.error;
-                    }
-                } catch (e) {
-                    // If we can't parse JSON, use the status text
-                }
-                throw new Error(errorMessage);
+                throw new Error(`Upload failed: ${response.statusText}`);
             }
-            
+
             const result = await response.json();
-            
+
             // Hide progress indicators
             if (videoFile) {
                 document.getElementById('video-upload-progress').classList.add('hidden');
@@ -509,17 +390,12 @@ class VideoManagement {
             if (thumbnailFile) {
                 document.getElementById('thumbnail-upload-progress').classList.add('hidden');
             }
-            
+
             return result;
         } catch (error) {
             // Hide progress indicators on error
-            if (document.getElementById('video-upload-progress')) {
-                document.getElementById('video-upload-progress').classList.add('hidden');
-            }
-            if (document.getElementById('thumbnail-upload-progress')) {
-                document.getElementById('thumbnail-upload-progress').classList.add('hidden');
-            }
-            console.error('Upload error:', error);
+            document.getElementById('video-upload-progress').classList.add('hidden');
+            document.getElementById('thumbnail-upload-progress').classList.add('hidden');
             throw error;
         }
     }

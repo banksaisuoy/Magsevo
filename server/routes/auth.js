@@ -20,7 +20,7 @@ router.post('/login', async (req, res) => {
     try {
         const db = await initDatabase();
         const { username, password } = req.body;
-        
+
         if (!username || !password) {
             return res.status(400).json({ error: 'Username and password are required' });
         }
@@ -64,7 +64,7 @@ router.post('/logout', async (req, res) => {
         const db = await initDatabase();
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
-        
+
         if (token) {
             try {
                 const decoded = jwt.verify(token, JWT_SECRET);
@@ -73,7 +73,7 @@ router.post('/logout', async (req, res) => {
                 // Token invalid, but that's ok for logout
             }
         }
-        
+
         res.json({ success: true, message: 'Logged out successfully' });
     } catch (error) {
         console.error('Logout error:', error);

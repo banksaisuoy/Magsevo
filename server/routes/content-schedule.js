@@ -46,14 +46,14 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const { status } = req.query;
-        
+
         let schedules;
         if (status === 'pending') {
             schedules = await ContentSchedule.getPending(db);
         } else {
             schedules = await ContentSchedule.getAll(db);
         }
-        
+
         res.json({ success: true, schedules });
     } catch (error) {
         console.error('Get scheduled content error:', error);
@@ -66,29 +66,29 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const { videoId, publish_at, action_type, description } = req.body;
-        
+
         if (!videoId || !publish_at) {
             return res.status(400).json({ error: 'Video ID and publish time are required' });
         }
-        
+
         // Validate publish_at is a future date
         const publishDate = new Date(publish_at);
         if (publishDate <= new Date()) {
             return res.status(400).json({ error: 'Publish time must be in the future' });
         }
-        
+
         // Check if video exists
         const video = await Video.getById(db, videoId);
         if (!video) {
             return res.status(404).json({ error: 'Video not found' });
         }
-        
+
         // Validate action_type
         const validActions = ['publish', 'unpublish', 'feature', 'unfeature'];
         if (action_type && !validActions.includes(action_type)) {
             return res.status(400).json({ error: 'Invalid action type' });
         }
-        
+
         const scheduleData = {
             videoId,
             publish_at,
@@ -96,11 +96,11 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
             scheduled_by: req.user.username,
             description: description || ''
         };
-        
+
         const result = await ContentSchedule.create(db, scheduleData);
-        
-        res.status(201).json({ 
-            success: true, 
+
+        res.status(201).json({
+            success: true,
             message: 'Content scheduled successfully',
             scheduleId: result.id
         });
@@ -116,13 +116,13 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
         const db = await initDatabase();
         const { id } = req.params;
         const { publish_at, action_type, description, status } = req.body;
-        
+
         // Check if schedule exists
         const existingSchedule = await db.get('SELECT * FROM content_schedule WHERE id = ?', [id]);
         if (!existingSchedule) {
             return res.status(404).json({ error: 'Scheduled content not found' });
         }
-        
+
         // Validate publish_at if provided
         if (publish_at) {
             const publishDate = new Date(publish_at);
@@ -130,28 +130,28 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
                 return res.status(400).json({ error: 'Publish time must be in the future' });
             }
         }
-        
+
         // Validate action_type if provided
         const validActions = ['publish', 'unpublish', 'feature', 'unfeature'];
         if (action_type && !validActions.includes(action_type)) {
             return res.status(400).json({ error: 'Invalid action type' });
         }
-        
+
         // Validate status if provided
         const validStatuses = ['pending', 'executed', 'cancelled'];
         if (status && !validStatuses.includes(status)) {
             return res.status(400).json({ error: 'Invalid status' });
         }
-        
+
         const scheduleData = {
             publish_at: publish_at || existingSchedule.publish_at,
             action_type: action_type || existingSchedule.action_type,
             description: description !== undefined ? description : existingSchedule.description,
             status: status || existingSchedule.status
         };
-        
+
         await ContentSchedule.update(db, id, scheduleData);
-        
+
         res.json({ success: true, message: 'Scheduled content updated successfully' });
     } catch (error) {
         console.error('Update scheduled content error:', error);
@@ -164,7 +164,7 @@ router.post('/:id/execute', authenticateToken, requireAdmin, async (req, res) =>
     try {
         const db = await initDatabase();
         const { id } = req.params;
-        
+
         // Get the schedule
         const schedule = await db.get(`
             SELECT cs.*, v.title as videoTitle
@@ -172,15 +172,15 @@ router.post('/:id/execute', authenticateToken, requireAdmin, async (req, res) =>
             LEFT JOIN videos v ON cs.videoId = v.id
             WHERE cs.id = ?
         `, [id]);
-        
+
         if (!schedule) {
             return res.status(404).json({ error: 'Scheduled content not found' });
         }
-        
+
         if (schedule.status !== 'pending') {
             return res.status(400).json({ error: 'Only pending schedules can be executed' });
         }
-        
+
         // Execute the action based on action_type
         try {
             switch (schedule.action_type) {
@@ -199,13 +199,13 @@ router.post('/:id/execute', authenticateToken, requireAdmin, async (req, res) =>
                     await db.run('UPDATE videos SET isFeatured = 0 WHERE id = ?', [schedule.videoId]);
                     break;
             }
-            
+
             // Mark schedule as executed
             await ContentSchedule.execute(db, id);
-            
-            res.json({ 
-                success: true, 
-                message: `Content ${schedule.action_type} executed successfully` 
+
+            res.json({
+                success: true,
+                message: `Content ${schedule.action_type} executed successfully`
             });
         } catch (actionError) {
             console.error('Error executing scheduled action:', actionError);
@@ -222,19 +222,19 @@ router.post('/:id/cancel', authenticateToken, requireAdmin, async (req, res) => 
     try {
         const db = await initDatabase();
         const { id } = req.params;
-        
+
         // Check if schedule exists and is pending
         const schedule = await db.get('SELECT * FROM content_schedule WHERE id = ?', [id]);
         if (!schedule) {
             return res.status(404).json({ error: 'Scheduled content not found' });
         }
-        
+
         if (schedule.status !== 'pending') {
             return res.status(400).json({ error: 'Only pending schedules can be cancelled' });
         }
-        
+
         await ContentSchedule.cancel(db, id);
-        
+
         res.json({ success: true, message: 'Scheduled content cancelled successfully' });
     } catch (error) {
         console.error('Cancel scheduled content error:', error);
@@ -247,7 +247,7 @@ router.get('/pending', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const pendingSchedules = await ContentSchedule.getPending(db);
-        
+
         res.json({ success: true, schedules: pendingSchedules });
     } catch (error) {
         console.error('Get pending schedules error:', error);
@@ -260,9 +260,9 @@ router.post('/execute-pending', authenticateToken, requireAdmin, async (req, res
     try {
         const db = await initDatabase();
         const pendingSchedules = await ContentSchedule.getPending(db);
-        
+
         const results = [];
-        
+
         for (const schedule of pendingSchedules) {
             try {
                 // Execute the action based on action_type
@@ -280,10 +280,10 @@ router.post('/execute-pending', authenticateToken, requireAdmin, async (req, res
                         await db.run('UPDATE videos SET isFeatured = 0 WHERE id = ?', [schedule.videoId]);
                         break;
                 }
-                
+
                 // Mark schedule as executed
                 await ContentSchedule.execute(db, schedule.id);
-                
+
                 results.push({
                     scheduleId: schedule.id,
                     videoId: schedule.videoId,
@@ -301,9 +301,9 @@ router.post('/execute-pending', authenticateToken, requireAdmin, async (req, res
                 });
             }
         }
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             message: `Executed ${results.filter(r => r.success).length} of ${results.length} pending schedules`,
             results
         });

@@ -8,7 +8,7 @@ class UserManagement {
 
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         try {
             const response = await this.app.api.get('/users');
             const users = response.success ? response.users : [];
@@ -56,9 +56,9 @@ class UserManagement {
                     </table>
                 </div>
             `;
-            
+
             adminContent.innerHTML = tableHtml;
-            
+
             document.getElementById('add-user-btn').addEventListener('click', () => this.showUserForm());
             document.querySelectorAll('.change-role-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => this.handleChangeRole(e));
@@ -79,7 +79,7 @@ class UserManagement {
         const username = event.currentTarget.dataset.username;
         const currentRole = event.currentTarget.dataset.role;
         const newRole = currentRole === 'admin' ? 'user' : 'admin';
-        
+
         this.app.showConfirmationModal(
             `Are you sure you want to change the role of ${username} to ${newRole}?`,
             async () => {
@@ -97,7 +97,7 @@ class UserManagement {
 
     async handleChangePassword(event) {
         const username = event.currentTarget.dataset.username;
-        
+
         const modalHtml = `
             <div class="modal-content">
                 <h3 class="modal-title">Change Password for ${username}</h3>
@@ -118,19 +118,19 @@ class UserManagement {
                 </form>
             </div>
         `;
-        
+
         this.app.showModal(modalHtml);
-        
+
         document.getElementById('change-password-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const newPassword = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
-            
+
             if (newPassword !== confirmPassword) {
                 this.app.showToast('Passwords do not match', 'error');
                 return;
             }
-            
+
             try {
                 await this.app.api.patch(`/users/${username}`, { password: newPassword });
                 this.app.showToast(`Password changed successfully for ${username}`, 'success');
@@ -140,18 +140,18 @@ class UserManagement {
                 this.app.showToast('Error changing password', 'error');
             }
         });
-        
+
         document.getElementById('cancel-btn').onclick = () => this.app.hideModal();
     }
 
     async handleManageProfile(event) {
         const username = event.currentTarget.dataset.username;
-        
+
         // First, get current user profile
         try {
             const response = await this.app.api.get(`/users/${username}`);
             const user = response.success ? response.user : {};
-            
+
             const modalHtml = `
                 <div class="modal-content">
                     <h3 class="modal-title">Manage Profile for ${username}</h3>
@@ -183,12 +183,12 @@ class UserManagement {
                     </form>
                 </div>
             `;
-            
+
             this.app.showModal(modalHtml);
-            
+
             document.getElementById('manage-profile-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+
                 const profileData = {
                     fullName: document.getElementById('full-name').value,
                     department: document.getElementById('department').value,
@@ -196,7 +196,7 @@ class UserManagement {
                     email: document.getElementById('email').value,
                     phone: document.getElementById('phone').value
                 };
-                
+
                 try {
                     await this.app.api.patch(`/users/${username}`, profileData);
                     this.app.showToast(`Profile updated successfully for ${username}`, 'success');
@@ -207,7 +207,7 @@ class UserManagement {
                     this.app.showToast('Error updating profile', 'error');
                 }
             });
-            
+
             document.getElementById('cancel-btn').onclick = () => this.app.hideModal();
         } catch (error) {
             console.error('Error loading user profile:', error);
@@ -243,9 +243,9 @@ class UserManagement {
                 </form>
             </div>
         `;
-        
+
         this.app.showModal(modalHtml);
-        
+
         document.getElementById('user-form').addEventListener('submit', (e) => this.handleUserFormSubmit(e, user));
         document.getElementById('cancel-btn').onclick = () => this.app.hideModal();
     }
@@ -255,7 +255,7 @@ class UserManagement {
         const username = document.getElementById('form-username').value;
         const password = document.getElementById('form-password').value;
         const role = document.getElementById('form-role').value;
-        
+
         try {
             if (user) {
                 await this.app.api.put(`/users/${username}`, { password, role });

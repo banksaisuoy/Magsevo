@@ -59,17 +59,17 @@ router.post('/', authenticateToken, async (req, res) => {
     try {
         const db = await initDatabase();
         const { action, details } = req.body;
-        
+
         if (!action || action.trim().length === 0) {
             return res.status(400).json({ error: 'Action is required' });
         }
-        
+
         const result = await Log.create(db, req.user.username, action.trim(), details || '');
-        
-        res.status(201).json({ 
-            success: true, 
+
+        res.status(201).json({
+            success: true,
             message: 'Log entry created successfully',
-            logId: result.id 
+            logId: result.id
         });
     } catch (error) {
         console.error('Create log error:', error);

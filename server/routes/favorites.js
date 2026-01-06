@@ -63,22 +63,22 @@ router.post('/:videoId', authenticateToken, async (req, res) => {
     try {
         const db = await initDatabase();
         const { videoId } = req.params;
-        
+
         // Check if video exists
         const video = await db.get('SELECT * FROM videos WHERE id = ?', [videoId]);
         if (!video) {
             return res.status(404).json({ error: 'Video not found' });
         }
-        
+
         // Check if already favorited
         const isFavorited = await Favorite.isFavorited(db, req.user.username, videoId);
         if (isFavorited) {
             return res.status(409).json({ error: 'Video already in favorites' });
         }
-        
+
         await Favorite.add(db, req.user.username, videoId);
         await Log.create(db, req.user.username, 'Add Favorite', `Added video ID ${videoId} to favorites`);
-        
+
         res.json({ success: true, message: 'Video added to favorites' });
     } catch (error) {
         console.error('Add favorite error:', error);
@@ -91,16 +91,16 @@ router.delete('/:videoId', authenticateToken, async (req, res) => {
     try {
         const db = await initDatabase();
         const { videoId } = req.params;
-        
+
         // Check if favorited
         const isFavorited = await Favorite.isFavorited(db, req.user.username, videoId);
         if (!isFavorited) {
             return res.status(404).json({ error: 'Video not in favorites' });
         }
-        
+
         await Favorite.remove(db, req.user.username, videoId);
         await Log.create(db, req.user.username, 'Remove Favorite', `Removed video ID ${videoId} from favorites`);
-        
+
         res.json({ success: true, message: 'Video removed from favorites' });
     } catch (error) {
         console.error('Remove favorite error:', error);

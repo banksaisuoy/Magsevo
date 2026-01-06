@@ -85,15 +85,15 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
             lockout_attempts,
             lockout_duration_minutes
         } = req.body;
-        
+
         if (!name || name.trim().length === 0) {
             return res.status(400).json({ error: 'Policy name is required' });
         }
-        
+
         if (min_length && (min_length < 4 || min_length > 64)) {
             return res.status(400).json({ error: 'Minimum length must be between 4 and 64 characters' });
         }
-        
+
         const policyData = {
             name: name.trim(),
             min_length: min_length || 8,
@@ -107,14 +107,14 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
             lockout_duration_minutes: lockout_duration_minutes || 30,
             created_by: req.user.username
         };
-        
+
         const result = await PasswordPolicy.create(db, policyData);
         await Log.create(db, req.user.username, 'Create Password Policy', `Created password policy: ${name}`);
-        
-        res.status(201).json({ 
-            success: true, 
+
+        res.status(201).json({
+            success: true,
             message: 'Password policy created and activated successfully',
-            policyId: result.id 
+            policyId: result.id
         });
     } catch (error) {
         console.error('Create password policy error:', error);
@@ -127,16 +127,16 @@ router.post('/validate', async (req, res) => {
     try {
         const db = await initDatabase();
         const { password } = req.body;
-        
+
         if (!password) {
             return res.status(400).json({ error: 'Password is required for validation' });
         }
-        
+
         const policy = await PasswordPolicy.getActive(db);
         const validation = await PasswordPolicy.validatePassword(password, policy);
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             validation,
             policy: policy ? {
                 name: policy.name,

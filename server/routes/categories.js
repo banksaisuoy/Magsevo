@@ -59,11 +59,11 @@ router.get('/:id', async (req, res) => {
         const db = await initDatabase();
         const { id } = req.params;
         const category = await Category.getById(db, id);
-        
+
         if (!category) {
             return res.status(404).json({ error: 'Category not found' });
         }
-        
+
         res.json({ success: true, category });
     } catch (error) {
         console.error('Get category error:', error);
@@ -76,18 +76,18 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const { name } = req.body;
-        
+
         if (!name || name.trim().length === 0) {
             return res.status(400).json({ error: 'Category name is required' });
         }
-        
+
         const result = await Category.create(db, name.trim());
         await Log.create(db, req.user.username, 'Add Category', `Added new category: ${name}`);
-        
-        res.status(201).json({ 
-            success: true, 
+
+        res.status(201).json({
+            success: true,
             message: 'Category created successfully',
-            categoryId: result.id 
+            categoryId: result.id
         });
     } catch (error) {
         if (error.message.includes('UNIQUE constraint failed')) {
@@ -104,20 +104,20 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
         const db = await initDatabase();
         const { id } = req.params;
         const { name } = req.body;
-        
+
         // Check if category exists
         const existingCategory = await Category.getById(db, id);
         if (!existingCategory) {
             return res.status(404).json({ error: 'Category not found' });
         }
-        
+
         if (!name || name.trim().length === 0) {
             return res.status(400).json({ error: 'Category name is required' });
         }
-        
+
         await Category.update(db, id, name.trim());
         await Log.create(db, req.user.username, 'Update Category', `Updated category ID: ${id}`);
-        
+
         res.json({ success: true, message: 'Category updated successfully' });
     } catch (error) {
         if (error.message.includes('UNIQUE constraint failed')) {
@@ -133,24 +133,24 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const { id } = req.params;
-        
+
         // Check if category exists
         const existingCategory = await Category.getById(db, id);
         if (!existingCategory) {
             return res.status(404).json({ error: 'Category not found' });
         }
-        
+
         // Check if there are videos using this category
         const videosInCategory = await db.all('SELECT COUNT(*) as count FROM videos WHERE categoryId = ?', [id]);
         if (videosInCategory[0].count > 0) {
-            return res.status(400).json({ 
-                error: 'Cannot delete category that contains videos. Please reassign or delete videos first.' 
+            return res.status(400).json({
+                error: 'Cannot delete category that contains videos. Please reassign or delete videos first.'
             });
         }
-        
+
         await Category.delete(db, id);
         await Log.create(db, req.user.username, 'Delete Category', `Deleted category ID: ${id}`);
-        
+
         res.json({ success: true, message: 'Category deleted successfully' });
     } catch (error) {
         console.error('Delete category error:', error);

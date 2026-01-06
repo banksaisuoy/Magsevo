@@ -12,8 +12,8 @@ foreach ($file in $markdownFiles) {
 }
 
 # Remove test JavaScript files
-$testJsFiles = Get-ChildItem -Path . -Include *.js -Recurse | Where-Object { 
-    $_.Name -like "*test*" -or 
+$testJsFiles = Get-ChildItem -Path . -Include *.js -Recurse | Where-Object {
+    $_.Name -like "*test*" -or
     $_.Name -like "*check*" -or
     $_.Name -like "*admin-panel*" -or
     $_.Name -like "*comprehensive*" -or
@@ -27,8 +27,8 @@ foreach ($file in $testJsFiles) {
 }
 
 # Remove HTML test files
-$htmlTestFiles = Get-ChildItem -Path . -Include *.html -Recurse | Where-Object { 
-    $_.Name -like "*test*" -or 
+$htmlTestFiles = Get-ChildItem -Path . -Include *.html -Recurse | Where-Object {
+    $_.Name -like "*test*" -or
     $_.Name -like "*carousel*" -or
     $_.Name -eq "Steam.html"
 }

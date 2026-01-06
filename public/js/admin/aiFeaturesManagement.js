@@ -9,11 +9,11 @@ class AIFeaturesManagement {
     // Render AI Features Management
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         try {
             const statusResponse = await this.app.api.get('/ai/status');
             const aiStatus = statusResponse.success ? statusResponse.ai : {};
-            
+
             // Map backend status to frontend expected structure
             const geminiApiConfigured = aiStatus.initialized && aiStatus.hasApiKey;
             const availableFeatures = {
@@ -24,7 +24,7 @@ class AIFeaturesManagement {
                 metadataGeneration: aiStatus.initialized,
                 transcription: false // Not implemented yet
             };
-            
+
             const aiHtml = `
                 <div class="space-y-6">
                     <div class="flex justify-between items-center">
@@ -34,7 +34,7 @@ class AIFeaturesManagement {
                             <button id="test-ai-btn" class="btn btn-info">Test AI Connection</button>
                         </div>
                     </div>
-                    
+
                     <!-- AI Status Card -->
                     <div class="card ${geminiApiConfigured ? 'border-success' : 'border-warning'}">
                         <div class="flex items-center mb-3">
@@ -88,7 +88,7 @@ class AIFeaturesManagement {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Individual AI Tools -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="card">
@@ -98,7 +98,7 @@ class AIFeaturesManagement {
                                     <label for="categorize-video" class="form-label">Select Video</label>
                                     <select id="categorize-video" class="form-select" required>
                                         <option value="">Choose a video...</option>
-                                        ${this.app.state.allVideos.map(video => 
+                                        ${this.app.state.allVideos.map(video =>
                                             `<option value="${video.id}">${video.title}</option>`
                                         ).join('')}
                                     </select>
@@ -108,7 +108,7 @@ class AIFeaturesManagement {
                                 </button>
                             </form>
                         </div>
-                        
+
                         <div class="card">
                             <h4 class="text-lg font-semibold mb-3">Generate Tags</h4>
                             <form id="generate-tags-form" class="space-y-3">
@@ -116,7 +116,7 @@ class AIFeaturesManagement {
                                     <label for="tags-video" class="form-label">Select Video</label>
                                     <select id="tags-video" class="form-select" required>
                                         <option value="">Choose a video...</option>
-                                        ${this.app.state.allVideos.map(video => 
+                                        ${this.app.state.allVideos.map(video =>
                                             `<option value="${video.id}">${video.title}</option>`
                                         ).join('')}
                                     </select>
@@ -126,7 +126,7 @@ class AIFeaturesManagement {
                                 </button>
                             </form>
                         </div>
-                        
+
                         <div class="card">
                             <h4 class="text-lg font-semibold mb-3">Analyze Content</h4>
                             <form id="analyze-content-form" class="space-y-3">
@@ -134,7 +134,7 @@ class AIFeaturesManagement {
                                     <label for="analyze-video" class="form-label">Select Video</label>
                                     <select id="analyze-video" class="form-select" required>
                                         <option value="">Choose a video...</option>
-                                        ${this.app.state.allVideos.map(video => 
+                                        ${this.app.state.allVideos.map(video =>
                                             `<option value="${video.id}">${video.title}</option>`
                                         ).join('')}
                                     </select>
@@ -144,7 +144,7 @@ class AIFeaturesManagement {
                                 </button>
                             </form>
                         </div>
-                        
+
                         <div class="card">
                             <h4 class="text-lg font-semibold mb-3">Generate Summary</h4>
                             <form id="generate-summary-form" class="space-y-3">
@@ -152,7 +152,7 @@ class AIFeaturesManagement {
                                     <label for="summary-video" class="form-label">Select Video</label>
                                     <select id="summary-video" class="form-select" required>
                                         <option value="">Choose a video...</option>
-                                        ${this.app.state.allVideos.map(video => 
+                                        ${this.app.state.allVideos.map(video =>
                                             `<option value="${video.id}">${video.title}</option>`
                                         ).join('')}
                                     </select>
@@ -169,7 +169,7 @@ class AIFeaturesManagement {
                             </form>
                         </div>
                     </div>
-                    
+
                     <!-- Results Display -->
                     <div id="ai-results" class="hidden">
                         <div class="card">
@@ -179,9 +179,9 @@ class AIFeaturesManagement {
                     </div>
                 </div>
             `;
-            
+
             adminContent.innerHTML = aiHtml;
-            
+
             // Event listeners
             this.setupEventHandlers();
         } catch (error) {
@@ -197,7 +197,7 @@ class AIFeaturesManagement {
             e.preventDefault();
             const videoId = document.getElementById('categorize-video').value;
             if (!videoId) return;
-            
+
             try {
                 this.app.showLoading(true, 'Categorizing video...');
                 const response = await this.app.api.post('/ai/categorize', { videoId });
@@ -213,13 +213,13 @@ class AIFeaturesManagement {
                 this.app.showLoading(false);
             }
         });
-        
+
         // Generate tags form
         document.getElementById('generate-tags-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const videoId = document.getElementById('tags-video').value;
             if (!videoId) return;
-            
+
             try {
                 this.app.showLoading(true, 'Generating tags...');
                 const response = await this.app.api.post('/ai/tags', { videoId });
@@ -234,13 +234,13 @@ class AIFeaturesManagement {
                 this.app.showLoading(false);
             }
         });
-        
+
         // Analyze content form
         document.getElementById('analyze-content-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const videoId = document.getElementById('analyze-video').value;
             if (!videoId) return;
-            
+
             try {
                 this.app.showLoading(true, 'Analyzing content...');
                 const response = await this.app.api.post('/ai/analyze', { videoId });
@@ -255,19 +255,19 @@ class AIFeaturesManagement {
                 this.app.showLoading(false);
             }
         });
-        
+
         // Generate summary form
         document.getElementById('generate-summary-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const videoId = document.getElementById('summary-video').value;
             const updateDescription = document.getElementById('update-description').checked;
             if (!videoId) return;
-            
+
             try {
                 this.app.showLoading(true, 'Generating summary...');
-                const response = await this.app.api.post('/ai/summary', { 
-                    videoId, 
-                    updateDescription 
+                const response = await this.app.api.post('/ai/summary', {
+                    videoId,
+                    updateDescription
                 });
                 this.displayAIResults('Summary Generation', response);
                 if (response.success && response.summary && response.summary.success) {
@@ -281,24 +281,24 @@ class AIFeaturesManagement {
                 this.app.showLoading(false);
             }
         });
-        
+
         // Batch process button
         document.getElementById('batch-process-btn').addEventListener('click', () => {
             this.showBatchProcessModal();
         });
-        
+
         // Test AI button
         document.getElementById('test-ai-btn').addEventListener('click', async () => {
             try {
                 this.app.showLoading(true, 'Testing AI connection...');
                 // Get a sample video for testing
                 const sampleVideo = this.app.state.allVideos.length > 0 ? this.app.state.allVideos[0] : null;
-                const requestData = sampleVideo ? 
-                    { videoId: sampleVideo.id } : 
+                const requestData = sampleVideo ?
+                    { videoId: sampleVideo.id } :
                     { title: 'Test Video', description: 'This is a test for AI connectivity' };
-                
+
                 const response = await this.app.api.post('/ai/categorize', requestData);
-                
+
                 if (response.success && response.categorization && response.categorization.success) {
                     this.app.showToast('AI connection successful!', 'success');
                     this.displayAIResults('AI Connection Test', {
@@ -346,22 +346,22 @@ class AIFeaturesManagement {
             }
         });
     }
-    
+
     // Display AI Results
     displayAIResults(title, response) {
         const resultsDiv = document.getElementById('ai-results');
         const contentDiv = document.getElementById('ai-results-content');
-        
+
         let resultHtml = `<h5 class="font-semibold mb-2">${title} Results</h5>`;
-        
+
         if (response.success) {
             resultHtml += '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-3">';
             resultHtml += '<p class="font-bold">Success!</p>';
-            
+
             if (response.categorization && response.categorization.category) {
                 resultHtml += `<p>Category: <span class="font-semibold">${response.categorization.category}</span></p>`;
             }
-            
+
             if (response.tags && response.tags.tags && response.tags.tags.length > 0) {
                 resultHtml += '<p>Generated Tags:</p>';
                 resultHtml += '<div class="flex flex-wrap gap-1 mt-2">';
@@ -370,15 +370,15 @@ class AIFeaturesManagement {
                 });
                 resultHtml += '</div>';
             }
-            
+
             if (response.summary && response.summary.summary) {
                 resultHtml += `<p>Summary: <span class="italic">${response.summary.summary}</span></p>`;
             }
-            
+
             if (response.analysis && response.analysis.analysis) {
                 const analysis = response.analysis.analysis;
                 if (analysis.qualityScore) {
-                    const statusColor = analysis.qualityScore >= 8 ? 'text-green-600' : 
+                    const statusColor = analysis.qualityScore >= 8 ? 'text-green-600' :
                                       analysis.qualityScore >= 5 ? 'text-yellow-600' : 'text-red-600';
                     resultHtml += `<p>Content Quality: <span class="font-semibold ${statusColor}">${analysis.qualityScore}/10</span></p>`;
                 }
@@ -386,7 +386,7 @@ class AIFeaturesManagement {
                     resultHtml += `<p>Difficulty Level: <span class="font-semibold">${analysis.difficultyLevel}</span></p>`;
                 }
             }
-            
+
             if (response.metadata && response.metadata.metadata) {
                 const metadata = response.metadata.metadata;
                 if (metadata.seoTitle) {
@@ -399,11 +399,11 @@ class AIFeaturesManagement {
                     resultHtml += '<p>Keywords: ' + metadata.keywords.join(', ') + '</p>';
                 }
             }
-            
+
             if (response.message) {
                 resultHtml += `<p>${response.message}</p>`;
             }
-            
+
             resultHtml += '</div>';
         } else {
             resultHtml += '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-3">';
@@ -411,10 +411,10 @@ class AIFeaturesManagement {
             resultHtml += `<p>${response.error || 'Unknown error occurred'}</p>`;
             resultHtml += '</div>';
         }
-        
+
         contentDiv.innerHTML = resultHtml;
         resultsDiv.classList.remove('hidden');
-        
+
         // Scroll to results
         resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -446,26 +446,26 @@ class AIFeaturesManagement {
                 </div>
             </div>
         `;
-        
+
         this.app.showModal(modalHtml);
-        
+
         // Event listeners
         document.getElementById('close-modal').addEventListener('click', () => this.app.hideModal());
         document.getElementById('cancel-batch-btn').addEventListener('click', () => this.app.hideModal());
-        
+
         document.getElementById('start-batch-btn').addEventListener('click', async () => {
             const selectedVideos = Array.from(document.querySelectorAll('.batch-video-checkbox:checked'))
                 .map(checkbox => checkbox.value);
-                
+
             if (selectedVideos.length === 0) {
                 this.app.showToast('Please select at least one video', 'warning');
                 return;
             }
-            
+
             try {
                 this.app.showLoading(true, `Processing ${selectedVideos.length} videos with AI...`);
                 const response = await this.app.api.post('/ai/batch', { videoIds: selectedVideos });
-                
+
                 if (response.success) {
                     this.app.hideModal();
                     await this.app.loadAllVideos();

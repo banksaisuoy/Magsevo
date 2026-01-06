@@ -19,12 +19,15 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+// Serve uploads from custom path if configured
+if (process.env.UPLOAD_PATH) {
+    app.use('/uploads', express.static(process.env.UPLOAD_PATH));
+}
 
 // Database setup
 const { Database } = require('./models/index');
-const dbInstance = new Database(path.join(__dirname, 'visionhub.db'));
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'visionhub.db');
+const dbInstance = new Database(dbPath);
 let db;
 
 // Initialize database connection and start server
@@ -35,10 +38,10 @@ async function initializeApp() {
         await initDatabase();
         // Create database indexes for optimization
         await dbInstance.createIndexes();
-        
+
         // Make database available to routes
         app.set('db', db);
-        
+
         // Import API routes after database is connected
         const apiRoutes = require('./routes');
         const healthMonitor = require('./services/healthMonitor');
@@ -78,7 +81,7 @@ async function initializeApp() {
         // Start server
         app.listen(PORT, async () => {
             console.log(`Server running on http://localhost:${PORT}`);
-            
+
             // Initialize AI service
             try {
                 // Pass database connection to AI service
@@ -89,7 +92,7 @@ async function initializeApp() {
             } catch (error) {
                 console.warn('AI Service initialization failed:', error.message);
             }
-            
+
             // Start health monitoring
             healthMonitor.startMonitoring();
             console.log('System health monitoring started');
@@ -102,26 +105,6 @@ async function initializeApp() {
 
 // Initialize database tables
 function initDatabase() {
-    // Ensure upload directories exist
-    const fs = require('fs');
-    const path = require('path');
-    const uploadDirs = [
-        path.join(__dirname, '../public/uploads'),
-        path.join(__dirname, '../public/uploads/videos'),
-        path.join(__dirname, '../public/uploads/thumbnails')
-    ];
-    
-    uploadDirs.forEach(dir => {
-        if (!fs.existsSync(dir)) {
-            try {
-                fs.mkdirSync(dir, { recursive: true });
-                console.log(`Created upload directory: ${dir}`);
-            } catch (error) {
-                console.error(`Failed to create upload directory ${dir}:`, error.message);
-            }
-        }
-    });
-
     const tables = [
         `CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
@@ -348,10 +331,10 @@ async function seedDatabase() {
     // Create default admin user
     const adminPassword = await bcrypt.hash('123456', 10);
     const userPassword = await bcrypt.hash('123456', 10);
-    
-    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`, 
+
+    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
            ['admin', adminPassword, 'admin']);
-    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`, 
+    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
            ['user', userPassword, 'user']);
 
     // Create default categories
@@ -447,8 +430,8 @@ function requireAdmin(req, res, next) {
 
 // Logging function
 function logAction(userId, action, details = '') {
-    db.run(`INSERT INTO logs (userId, action, details) VALUES (?, ?, ?)`, 
-           [userId, action, details], 
+    db.run(`INSERT INTO logs (userId, action, details) VALUES (?, ?, ?)`,
+           [userId, action, details],
            (err) => {
                if (err) console.error('Error logging action:', err.message);
            });

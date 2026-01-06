@@ -101,53 +101,17 @@ p { margin-bottom: 1rem; }
 .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 
 @media (min-width: 640px) {
-    .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .sm\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sm\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (min-width: 1024px) {
-    .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    .lg\:col-span-2 { grid-column: span 2 / span 2; }
-    .lg\:col-span-1 { grid-column: span 1 / span 1; }
-}
-
-/* Pagination */
-.pagination {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-}
-
-.pagination-button {
-    padding: 0.5rem 1rem;
-    background-color: var(--surface-light);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.pagination-button:hover:not(:disabled) {
-    background-color: var(--surface-dark);
-}
-
-.pagination-button.active {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-.pagination-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    .lg\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .lg\\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .lg\\:col-span-2 { grid-column: span 2 / span 2; }
+    .lg\\:col-span-1 { grid-column: span 1 / span 1; }
 }
 
 /* Cards and Surfaces */
@@ -459,11 +423,11 @@ p { margin-bottom: 1rem; }
         flex-direction: row;
         align-items: flex-start;
     }
-    
+
     .featured-image-container {
         flex: 2;
     }
-    
+
     .featured-text-container {
         flex: 1;
         padding: 1.5rem;
@@ -803,32 +767,32 @@ p { margin-bottom: 1rem; }
     .app-container {
         padding: 0.5rem;
     }
-    
+
     .header {
         padding: 1rem;
         flex-direction: column;
         text-align: center;
     }
-    
+
     .header-actions {
         width: 100%;
         justify-content: center;
         flex-wrap: wrap;
     }
-    
+
     .search-container {
         order: -1;
         margin-bottom: 1rem;
     }
-    
+
     .modal-content {
         padding: 1.5rem;
     }
-    
+
     .featured-content {
         flex-direction: column;
     }
-    
+
     .nav-tabs {
         justify-content: center;
     }

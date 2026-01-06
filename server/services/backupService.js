@@ -132,17 +132,17 @@ class BackupService {
 
             // Read backup directory
             const files = await fs.readdir(this.backupPath);
-            
+
             // Filter and sort backup files
             const backups = [];
             for (const file of files) {
                 if (file.startsWith('visionhub-')) {
                     const filePath = path.join(this.backupPath, file);
                     const stats = await fs.stat(filePath);
-                    
-                    const type = file.includes('-db-') ? 'database' : 
+
+                    const type = file.includes('-db-') ? 'database' :
                                 file.includes('-files-') ? 'files' : 'unknown';
-                    
+
                     backups.push({
                         filename: file,
                         path: filePath,
@@ -180,7 +180,7 @@ class BackupService {
     async restoreDatabase(backupFilename) {
         try {
             const backupFilePath = path.join(this.backupPath, backupFilename);
-            
+
             // Validate backup file exists
             try {
                 await fs.access(backupFilePath);
@@ -195,7 +195,7 @@ class BackupService {
 
             // Create a backup of current database before restoring
             const currentBackup = await this.backupDatabase();
-            
+
             // Copy backup file to database location
             await fs.copyFile(backupFilePath, this.dbPath);
 
@@ -225,7 +225,7 @@ class BackupService {
     async deleteBackup(backupFilename) {
         try {
             const backupFilePath = path.join(this.backupPath, backupFilename);
-            
+
             // Validate backup file exists
             try {
                 await fs.access(backupFilePath);

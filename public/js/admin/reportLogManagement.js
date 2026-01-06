@@ -8,16 +8,16 @@ class ReportLogManagement {
 
     async render() {
         const adminContent = document.getElementById('admin-content');
-        
+
         try {
             const [reportsResponse, logsResponse] = await Promise.all([
                 this.app.api.get('/reports'),
                 this.app.api.get('/logs?limit=50')
             ]);
-            
+
             const reports = reportsResponse.success ? reportsResponse.reports : [];
             const logs = logsResponse.success ? logsResponse.logs : [];
-            
+
             const reportsHtml = `
                 <div class="card mb-6">
                     <h3 class="text-xl font-bold mb-4">Video Reports</h3>
@@ -81,9 +81,9 @@ class ReportLogManagement {
                     ` : '<p class="text-muted">No activity logs</p>'}
                 </div>
             `;
-            
+
             adminContent.innerHTML = reportsHtml;
-            
+
             document.querySelectorAll('.resolve-report-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => this.handleResolveReport(e));
             });
@@ -95,7 +95,7 @@ class ReportLogManagement {
 
     async handleResolveReport(event) {
         const reportId = event.currentTarget.dataset.id;
-        
+
         try {
             await this.app.api.delete(`/reports/${reportId}`);
             this.app.showToast('Report resolved successfully', 'success');

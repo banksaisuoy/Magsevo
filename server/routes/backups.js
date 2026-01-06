@@ -48,7 +48,7 @@ router.get('/status', authenticateToken, requireAdmin, (req, res) => {
 router.post('/database', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const result = await backupService.backupDatabase();
-        
+
         if (result.success) {
             res.json({
                 success: true,
@@ -71,7 +71,7 @@ router.post('/database', authenticateToken, requireAdmin, async (req, res) => {
 router.post('/files', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const result = await backupService.backupFiles();
-        
+
         if (result.success) {
             res.json({
                 success: true,
@@ -94,7 +94,7 @@ router.post('/files', authenticateToken, requireAdmin, async (req, res) => {
 router.post('/full', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const result = await backupService.backupFull();
-        
+
         if (result.success) {
             res.json({
                 success: true,
@@ -117,7 +117,7 @@ router.post('/full', authenticateToken, requireAdmin, async (req, res) => {
 router.get('/list', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const result = await backupService.listBackups();
-        
+
         if (result.success) {
             res.json({
                 success: true,
@@ -140,14 +140,14 @@ router.get('/list', authenticateToken, requireAdmin, async (req, res) => {
 router.post('/restore/:filename', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { filename } = req.params;
-        
+
         // Validate filename
         if (!filename) {
             return res.status(400).json({ error: 'Backup filename required' });
         }
 
         const result = await backupService.restoreDatabase(filename);
-        
+
         if (result.success) {
             res.json({
                 success: true,
@@ -170,14 +170,14 @@ router.post('/restore/:filename', authenticateToken, requireAdmin, async (req, r
 router.delete('/:filename', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { filename } = req.params;
-        
+
         // Validate filename
         if (!filename) {
             return res.status(400).json({ error: 'Backup filename required' });
         }
 
         const result = await backupService.deleteBackup(filename);
-        
+
         if (result.success) {
             res.json({
                 success: true,
@@ -200,7 +200,7 @@ router.delete('/:filename', authenticateToken, requireAdmin, async (req, res) =>
 router.post('/schedule', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const result = await backupService.scheduleBackups();
-        
+
         if (result.success) {
             res.json({
                 success: true,

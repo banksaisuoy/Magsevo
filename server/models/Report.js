@@ -1,9 +1,9 @@
 class Report {
     static async getAll(db) {
         return await db.all(`
-            SELECT r.*, v.title as videoTitle 
-            FROM reports r 
-            LEFT JOIN videos v ON r.videoId = v.id 
+            SELECT r.*, v.title as videoTitle
+            FROM reports r
+            LEFT JOIN videos v ON r.videoId = v.id
             ORDER BY r.created_at DESC
         `);
     }

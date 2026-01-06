@@ -47,26 +47,22 @@ function requireAdmin(req, res, next) {
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const uploadDir = file.fieldname === 'video' ? 
-            path.join(__dirname, '../../public/uploads/videos') : 
-            path.join(__dirname, '../../public/uploads/thumbnails');
-        
-        // Ensure upload directory exists with proper permissions
-        try {
-            if (!fs.existsSync(uploadDir)) {
-                fs.mkdirSync(uploadDir, { recursive: true });
-            }
-        } catch (mkdirError) {
-            console.error('Error creating upload directory:', mkdirError);
-            // Try creating in a different location
-            const fallbackDir = path.join(__dirname, '../../uploads');
-            if (!fs.existsSync(fallbackDir)) {
-                fs.mkdirSync(fallbackDir, { recursive: true });
-            }
-            cb(null, fallbackDir);
-            return;
+        let uploadBasePath;
+        if (process.env.UPLOAD_PATH) {
+            uploadBasePath = process.env.UPLOAD_PATH;
+        } else {
+            uploadBasePath = path.join(__dirname, '../../public/uploads');
         }
-        
+
+        const uploadDir = file.fieldname === 'video' ?
+            path.join(uploadBasePath, 'videos') :
+            path.join(uploadBasePath, 'thumbnails');
+
+        // Ensure upload directory exists
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
         cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
@@ -84,24 +80,14 @@ const fileFilter = (req, file, cb) => {
         if (file.mimetype.startsWith('video/')) {
             cb(null, true);
         } else {
-            // For testing purposes, also accept text files as videos
-            if (file.mimetype.startsWith('text/')) {
-                cb(null, true);
-            } else {
-                cb(new Error('Only video files are allowed for video upload'), false);
-            }
+            cb(new Error('Only video files are allowed for video upload'), false);
         }
     } else if (file.fieldname === 'thumbnail') {
         // Accept image files
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
         } else {
-            // For testing purposes, also accept text files as images
-            if (file.mimetype.startsWith('text/')) {
-                cb(null, true);
-            } else {
-                cb(new Error('Only image files are allowed for thumbnail upload'), false);
-            }
+            cb(new Error('Only image files are allowed for thumbnail upload'), false);
         }
     } else {
         cb(new Error('Invalid field name'), false);
@@ -122,7 +108,7 @@ router.post('/video', authenticateToken, requireAdmin, upload.fields([
 ]), async (req, res) => {
     try {
         const db = await initDatabase();
-        
+
         if (!req.files || (!req.files.video && !req.body.videoUrl)) {
             return res.status(400).json({ error: 'Video file or URL is required' });
         }
@@ -142,7 +128,7 @@ router.post('/video', authenticateToken, requireAdmin, upload.fields([
             thumbnailUrl = `/uploads/thumbnails/${thumbnailFile.filename}`;
         }
 
-        await Log.create(db, req.user.username, 'Upload Video', 
+        await Log.create(db, req.user.username, 'Upload Video',
             `Uploaded video: ${req.body.title}, Video: ${videoUrl}, Thumbnail: ${thumbnailUrl}`
         );
 
@@ -150,9 +136,7 @@ router.post('/video', authenticateToken, requireAdmin, upload.fields([
             success: true,
             videoUrl: videoUrl,
             thumbnailUrl: thumbnailUrl,
-            message: 'Files uploaded successfully',
-            uploadedFiles: req.files,
-            timestamp: new Date().toISOString()
+            message: 'Files uploaded successfully'
         });
 
     } catch (error) {
@@ -165,14 +149,14 @@ router.post('/video', authenticateToken, requireAdmin, upload.fields([
 router.post('/thumbnail', authenticateToken, requireAdmin, upload.single('thumbnail'), async (req, res) => {
     try {
         const db = await initDatabase();
-        
+
         if (!req.file) {
             return res.status(400).json({ error: 'Thumbnail file is required' });
         }
 
         const thumbnailUrl = `/uploads/thumbnails/${req.file.filename}`;
 
-        await Log.create(db, req.user.username, 'Upload Thumbnail', 
+        await Log.create(db, req.user.username, 'Upload Thumbnail',
             `Uploaded thumbnail: ${thumbnailUrl}`
         );
 
@@ -193,18 +177,37 @@ router.delete('/file', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const { filePath } = req.body;
-        
+
         if (!filePath) {
             return res.status(400).json({ error: 'File path is required' });
         }
 
-        // Security check: ensure file is in uploads directory
-        if (!filePath.startsWith('/uploads/')) {
+        // Security check: prevent path traversal and ensure file is in uploads directory
+        const normalizedPath = path.normalize(filePath).replace(/^(\.\.[\/\\])+/, '');
+
+        if (!normalizedPath.startsWith('/uploads/')) {
             return res.status(400).json({ error: 'Invalid file path' });
         }
 
-        const fullPath = path.join(__dirname, '../../public', filePath);
-        
+        let uploadBasePath;
+        if (process.env.UPLOAD_PATH) {
+            uploadBasePath = process.env.UPLOAD_PATH;
+        } else {
+            uploadBasePath = path.join(__dirname, '../../public/uploads');
+        }
+
+        // Remove '/uploads' prefix to join with base path
+        const relativePath = normalizedPath.replace(/^\/uploads/, '');
+        const fullPath = path.join(uploadBasePath, relativePath);
+
+        // Verify the resolved path is still within the upload directory
+        const resolvedPath = path.resolve(fullPath);
+        const resolvedBasePath = path.resolve(uploadBasePath);
+
+        if (!resolvedPath.startsWith(resolvedBasePath)) {
+             return res.status(400).json({ error: 'Invalid file path: Traversal detected' });
+        }
+
         if (fs.existsSync(fullPath)) {
             fs.unlinkSync(fullPath);
             await Log.create(db, req.user.username, 'Delete Upload', `Deleted file: ${filePath}`);

@@ -50,7 +50,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const db = await initDatabase();
         const permissions = await Permission.getAll(db);
-        
+
         // Group by category
         const groupedPermissions = permissions.reduce((acc, permission) => {
             if (!acc[permission.category]) {
@@ -59,7 +59,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
             acc[permission.category].push(permission);
             return acc;
         }, {});
-        
+
         res.json({ success: true, permissions: groupedPermissions });
     } catch (error) {
         console.error('Get permissions error:', error);
@@ -85,14 +85,14 @@ router.get('/user/:username', authenticateToken, async (req, res) => {
     try {
         const db = await initDatabase();
         const { username } = req.params;
-        
+
         // Users can only view their own permissions, admins can view any
         if (req.user.role !== 'admin' && req.user.username !== username) {
             return res.status(403).json({ error: 'Access denied' });
         }
-        
+
         const permissions = await Permission.getUserPermissions(db, username);
-        
+
         // Group by category
         const groupedPermissions = permissions.reduce((acc, permission) => {
             if (!acc[permission.category]) {
@@ -101,7 +101,7 @@ router.get('/user/:username', authenticateToken, async (req, res) => {
             acc[permission.category].push(permission);
             return acc;
         }, {});
-        
+
         res.json({ success: true, permissions: groupedPermissions });
     } catch (error) {
         console.error('Get user permissions error:', error);
@@ -114,17 +114,17 @@ router.post('/user/:username/:permissionId', authenticateToken, requireAdmin, as
     try {
         const db = await initDatabase();
         const { username, permissionId } = req.params;
-        
+
         // Check if user exists
         const User = require('../models/index').User;
         const user = await User.findByUsername(db, username);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
+
         await Permission.grantUserPermission(db, username, permissionId, req.user.username);
         await Log.create(db, req.user.username, 'Grant Permission', `Granted permission ${permissionId} to user: ${username}`);
-        
+
         res.json({ success: true, message: 'Permission granted successfully' });
     } catch (error) {
         console.error('Grant user permission error:', error);
@@ -137,10 +137,10 @@ router.delete('/user/:username/:permissionId', authenticateToken, requireAdmin, 
     try {
         const db = await initDatabase();
         const { username, permissionId } = req.params;
-        
+
         await Permission.revokeUserPermission(db, username, permissionId);
         await Log.create(db, req.user.username, 'Revoke Permission', `Revoked permission ${permissionId} from user: ${username}`);
-        
+
         res.json({ success: true, message: 'Permission revoked successfully' });
     } catch (error) {
         console.error('Revoke user permission error:', error);
@@ -153,17 +153,17 @@ router.post('/group/:groupId/:permissionId', authenticateToken, requireAdmin, as
     try {
         const db = await initDatabase();
         const { groupId, permissionId } = req.params;
-        
+
         // Check if group exists
         const UserGroup = require('../models/index').UserGroup;
         const group = await UserGroup.getById(db, groupId);
         if (!group) {
             return res.status(404).json({ error: 'Group not found' });
         }
-        
+
         await Permission.grantGroupPermission(db, groupId, permissionId, req.user.username);
         await Log.create(db, req.user.username, 'Grant Group Permission', `Granted permission ${permissionId} to group: ${group.name}`);
-        
+
         res.json({ success: true, message: 'Permission granted to group successfully' });
     } catch (error) {
         console.error('Grant group permission error:', error);
@@ -176,13 +176,13 @@ router.delete('/group/:groupId/:permissionId', authenticateToken, requireAdmin, 
     try {
         const db = await initDatabase();
         const { groupId, permissionId } = req.params;
-        
+
         const UserGroup = require('../models/index').UserGroup;
         const group = await UserGroup.getById(db, groupId);
-        
+
         await Permission.revokeGroupPermission(db, groupId, permissionId);
         await Log.create(db, req.user.username, 'Revoke Group Permission', `Revoked permission ${permissionId} from group: ${group?.name || groupId}`);
-        
+
         res.json({ success: true, message: 'Permission revoked from group successfully' });
     } catch (error) {
         console.error('Revoke group permission error:', error);

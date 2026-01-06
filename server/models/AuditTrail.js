@@ -50,22 +50,22 @@ class AuditTrail {
             query += ' AND at.user_id = ?';
             params.push(filters.userId);
         }
-        
+
         if (filters.action) {
             query += ' AND at.action_type LIKE ?';
             params.push(`%${filters.action}%`);
         }
-        
+
         if (filters.resource_type) {
             query += ' AND at.resource_type = ?';
             params.push(filters.resource_type);
         }
-        
+
         if (filters.dateFrom) {
             query += ' AND at.created_at >= ?';
             params.push(filters.dateFrom);
         }
-        
+
         if (filters.dateTo) {
             query += ' AND at.created_at <= ?';
             params.push(filters.dateTo);

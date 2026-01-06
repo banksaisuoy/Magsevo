@@ -1,11 +1,11 @@
 class Favorite {
     static async getUserFavorites(db, userId) {
         return await db.all(`
-            SELECT v.*, c.name as categoryName 
-            FROM videos v 
-            LEFT JOIN categories c ON v.categoryId = c.id 
-            INNER JOIN user_favorites uf ON v.id = uf.videoId 
-            WHERE uf.userId = ? 
+            SELECT v.*, c.name as categoryName
+            FROM videos v
+            LEFT JOIN categories c ON v.categoryId = c.id
+            INNER JOIN user_favorites uf ON v.id = uf.videoId
+            WHERE uf.userId = ?
             ORDER BY uf.created_at DESC
         `, [userId]);
     }
