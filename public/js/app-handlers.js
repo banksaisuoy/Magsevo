@@ -618,6 +618,8 @@ Object.assign(App, {
     }
 });
 
+// Note: App initialization is handled in app.js, so we don't need to initialize here
+
 // Initialize the application when the DOM is loaded
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => App.init());

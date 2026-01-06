@@ -4,7 +4,7 @@ const path = require('path');
 
 class Database {
     constructor(dbPath = null) {
-        this.dbPath = dbPath || process.env.DB_PATH || path.join(__dirname, '..', 'visionhub.db');
+        this.dbPath = dbPath || path.join(__dirname, '..', 'visionhub.db');
         this.db = null;
     }
 
@@ -95,9 +95,9 @@ class Database {
             'CREATE INDEX IF NOT EXISTS idx_logs_user ON logs(userId)',
             'CREATE INDEX IF NOT EXISTS idx_logs_action ON logs(action)',
             'CREATE INDEX IF NOT EXISTS idx_reports_video ON reports(videoId)',
-            'CREATE INDEX IF NOT EXISTS idx_video_tags_video ON video_tags(videoId)',
-            'CREATE INDEX IF NOT EXISTS idx_video_tags_tag ON video_tags(tagId)',
-            'CREATE INDEX IF NOT EXISTS idx_playlist_videos_playlist ON playlist_videos(playlistId)',
+            'CREATE INDEX IF NOT EXISTS idx_video_tags_video ON video_tags(video_id)',
+            'CREATE INDEX IF NOT EXISTS idx_video_tags_tag ON video_tags(tag_id)',
+            'CREATE INDEX IF NOT EXISTS idx_playlist_videos_playlist ON playlist_videos(playlist_id)',
             'CREATE INDEX IF NOT EXISTS idx_user_group_members_user ON user_group_members(username)',
             'CREATE INDEX IF NOT EXISTS idx_user_group_members_group ON user_group_members(group_id)',
             'CREATE INDEX IF NOT EXISTS idx_user_permissions_user ON user_permissions(username)',
