@@ -21,7 +21,7 @@
   "author": "VisionHub Team",
   "license": "MIT",
   "dependencies": {
-    "@google/generative-ai": "^0.2.1",
+    "@google/generative-ai": "^0.21.0",
     "@ngrok/ngrok": "^1.5.2",
     "axios": "^1.12.0",
     "bcrypt": "^5.1.0",
