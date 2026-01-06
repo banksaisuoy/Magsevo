@@ -53,22 +53,12 @@ const App = {
                 if (response.success) {
                     this.state.currentUser = response.user;
                     console.log('User authenticated:', this.state.currentUser);
-                } else {
-                    // Token verification failed, remove invalid token
-                    localStorage.removeItem('authToken');
-                    this.state.currentUser = null;
-                    console.log('Token verification failed, removed invalid token');
                 }
             } catch (error) {
                 // Token is invalid, remove it
                 localStorage.removeItem('authToken');
-                this.state.currentUser = null;
                 console.log('Invalid token, removed from localStorage');
             }
-        } else {
-            // No token found, ensure currentUser is null
-            this.state.currentUser = null;
-            console.log('No auth token found, setting currentUser to null');
         }
 
         // Load initial data
@@ -240,13 +230,13 @@ const App = {
         console.log('Rendering app, current page:', this.state.currentPage, 'user:', this.state.currentUser);
         console.log('Featured interval ID during render:', this.state.featuredIntervalId);
         if (!this.state.currentUser) {
-            console.log('No current user, rendering login page');
+            
             this.renderLoginPage();
         } else {
             console.log('Rendering main app for user:', this.state.currentUser.username);
             switch (this.state.currentPage) {
                 case 'home':
-                    console.log('Rendering home page');
+                    
                     this.renderHomePage();
                     break;
                 case 'video':
@@ -254,15 +244,15 @@ const App = {
                     this.renderVideoPage(this.state.currentVideoId);
                     break;
                 case 'admin':
-                    console.log('Rendering admin page');
+                    
                     this.renderAdminPage();
                     break;
                 case 'favorites':
-                    console.log('Rendering favorites page');
+                    
                     this.renderFavoritesPage();
                     break;
                 default:
-                    console.log('Rendering default home page');
+                    
                     this.renderHomePage();
             }
         }
@@ -507,18 +497,16 @@ const App = {
                     </div>
                     ${!filteredVideos && totalPages > 1 ? `
                         <div class="pagination">
-                            <button class="pagination-button" id="prev-page-group" ${currentPage <= 10 ? 'disabled' : ''}>
-                                &laquo; Prev 10
-                            </button>
                             <button class="pagination-button" id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>
                                 Previous
                             </button>
-                            ${this.generatePageButtons(currentPage, totalPages)}
+                            ${Array.from({ length: totalPages }, (_, i) => i + 1).map(page => `
+                                <button class="pagination-button ${page === currentPage ? 'active' : ''}" data-page="${page}">
+                                    ${page}
+                                </button>
+                            `).join('')}
                             <button class="pagination-button" id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>
                                 Next
-                            </button>
-                            <button class="pagination-button" id="next-page-group" ${currentPage > totalPages - 10 ? 'disabled' : ''}>
-                                Next 10 &raquo;
                             </button>
                         </div>
                     ` : ''}
@@ -595,18 +583,6 @@ const App = {
                 }
             });
 
-            document.getElementById('prev-page-group')?.addEventListener('click', () => {
-                const newPage = Math.max(1, currentPage - 10);
-                this.state.currentVideoPage = newPage;
-                this.renderHomePage();
-            });
-
-            document.getElementById('next-page-group')?.addEventListener('click', () => {
-                const newPage = Math.min(totalPages, currentPage + 10);
-                this.state.currentVideoPage = newPage;
-                this.renderHomePage();
-            });
-
             document.querySelectorAll('.pagination-button[data-page]').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const page = parseInt(e.target.dataset.page);
@@ -617,24 +593,6 @@ const App = {
                 });
             });
         }
-    },
-
-    // Generate page buttons with limited display
-    generatePageButtons(currentPage, totalPages) {
-        const pagesToShow = 10;
-        const startPage = Math.floor((currentPage - 1) / pagesToShow) * pagesToShow + 1;
-        const endPage = Math.min(startPage + pagesToShow - 1, totalPages);
-        
-        let buttons = '';
-        for (let i = startPage; i <= endPage; i++) {
-            buttons += `
-                <button class="pagination-button ${i === currentPage ? 'active' : ''}" data-page="${i}">
-                    ${i}
-                </button>
-            `;
-        }
-        
-        return buttons;
     }
 };
 
@@ -1290,8 +1248,17 @@ Object.assign(App, {
         } catch (error) {
             console.error('Error loading comments:', error);
         }
+    },
+
+    // Initialize the application when the DOM is loaded
+    initApp() {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => App.init());
+        } else {
+            App.init();
+        }
     }
-});
+};
 
 // Initialize the application when the DOM is loaded
 if (document.readyState === 'loading') {

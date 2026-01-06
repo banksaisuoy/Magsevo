@@ -49,7 +49,7 @@ class Video {
     }
 
     static async create(db, videoData) {
-        return await db.run(`
+        const result = await db.run(`
             INSERT INTO videos (title, description, thumbnailUrl, videoUrl, categoryId, isFeatured) 
             VALUES (?, ?, ?, ?, ?, ?)
         `, [
@@ -60,10 +60,11 @@ class Video {
             videoData.categoryId,
             videoData.isFeatured ? 1 : 0
         ]);
+        return { id: result.id };
     }
 
     static async update(db, id, videoData) {
-        return await db.run(`
+        const result = await db.run(`
             UPDATE videos 
             SET title = ?, description = ?, thumbnailUrl = ?, videoUrl = ?, categoryId = ?, isFeatured = ?
             WHERE id = ?
@@ -76,6 +77,7 @@ class Video {
             videoData.isFeatured ? 1 : 0,
             id
         ]);
+        return { changes: result.changes };
     }
 
     static async delete(db, id) {

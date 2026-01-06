@@ -38,8 +38,14 @@ class AIService {
             }
 
             this.genAI = new GoogleGenerativeAI(apiKey);
-            // Updated to use gemini-1.5-flash which is available in the API
+            // Try gemini-1.5-flash first, fallback to gemini-pro if not available
+            // Use a supported model - gemini-1.5-flash may not be available in all regions
+        try {
             this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        } catch (modelError) {
+            console.warn('gemini-1.5-flash not available, trying gemini-pro');
+            this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
+        }
             this.initialized = true;
             console.log('AI Service initialized successfully');
         } catch (error) {

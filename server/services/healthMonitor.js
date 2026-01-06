@@ -262,6 +262,8 @@ class SystemHealthMonitor {
             } catch (error) {
                 services.geminiAI.status = 'error';
                 services.geminiAI.error = error.message;
+                // Log error but don't let it interrupt health checks
+                console.error('AI Service health check failed:', error.message);
             }
         }
 
