@@ -35,7 +35,10 @@ async function initializeApp() {
     try {
         db = await dbInstance.connect();
         console.log('Connected to SQLite database.');
+
+        // Ensure tables are created sequentially
         await initDatabase();
+
         // Create database indexes for optimization
         await dbInstance.createIndexes();
 
@@ -105,7 +108,7 @@ async function initializeApp() {
 }
 
 // Initialize database tables
-function initDatabase() {
+async function initDatabase() {
     const tables = [
         `CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
@@ -177,16 +180,20 @@ function initDatabase() {
         )`
     ];
 
-    tables.forEach((table) => {
-        db.run(table, (err) => {
-            if (err) {
-                console.error('Error creating table:', err.message);
-            }
-        });
-    });
+    // Use dbInstance.run (Promise-based) if available, or wrap db.run
+    // dbInstance.run is available if Database.js implements it (it does in our restored version)
+    // But we need to use dbInstance, not raw db (sqlite object)
+
+    for (const table of tables) {
+        try {
+            await dbInstance.run(table);
+        } catch (err) {
+            console.error('Error creating table:', err.message);
+        }
+    }
 
     // Insert default data
-    seedDatabase();
+    await seedDatabase();
 }
 
 // Seed database with initial data
@@ -195,20 +202,32 @@ async function seedDatabase() {
     const adminPassword = await bcrypt.hash('123456', 10);
     const userPassword = await bcrypt.hash('123456', 10);
 
-    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
+    // We use raw sql here, so wrap in promise or use dbInstance.run
+    const run = (sql, params) => dbInstance.run(sql, params);
+
+    await run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
            ['admin', adminPassword, 'admin']);
-    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
+    await run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
            ['user', userPassword, 'user']);
 
     // Create default categories
     const categories = ['Development', 'Design', 'Marketing'];
-    categories.forEach(category => {
-        db.run(`INSERT OR IGNORE INTO categories (name) VALUES (?)`, [category]);
-    });
+    for (const category of categories) {
+        await run(`INSERT OR IGNORE INTO categories (name) VALUES (?)`, [category]);
+    }
 
-    // Create default settings
-    db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['siteName', 'VisionHub']);
-    db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['primaryColor', '#2a9d8f']);
+    // Settings
+    await run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['siteName', 'VisionHub']);
+    await run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['primaryColor', '#2a9d8f']);
+
+    // Default Report Reasons (if table exists - we didn't add it in tables array in this file,
+    // but it might exist from setup.js or previous runs)
+    // To be safe, let's create it if we need it, or skip.
+    // The previous setup.js had it.
+
+    // We skip video seeding here to avoid FK issues and duplication.
+    // Video seeding is better handled by setup.js which is smarter.
+    // server.js should only ensure critical data (users, settings).
 }
 
 // Authentication middleware
