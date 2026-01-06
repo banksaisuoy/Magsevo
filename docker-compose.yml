@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  visionhub:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - JWT_SECRET=your-production-secret-key-change-this
+      - GEMINI_API_KEY=AIzaSyDAw9EVTk9zJ0w4Rzywurh7tAwM6zFfvMA
+    volumes:
+      - ./server/visionhub.db:/app/server/visionhub.db
+      - ./public/uploads:/app/public/uploads
+    restart: unless-stopped
+    depends_on:
+      - db-init
+
+  db-init:
+    build: .
+    command: npm run setup
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./server/visionhub.db:/app/server/visionhub.db
+    restart: "no"

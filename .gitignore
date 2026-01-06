@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+
+# IDE files
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation files (we'll keep README.md)
+*.md
+!README.md
+!LICENSE
+
+# Docker files
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Ignore all .env files
+.env*
+
+# Test and debug files
+debug*.html
+debug*.js
+test*.js
+test*.html
+*test*.js
+*test*.html
+final-verification.js
+fix-api-key.js
+init_db.js
+optimize-project.js
+count-files.js
+ready-to-use.js
+remove-dead-code.js
+restore-original.js
+verify-fix.js
+verify-fixes.js
+cleanup-project.js
+
+# Shell scripts
+*.sh
+*.bat
+start.sh
+start.bat
+cleanup.sh
+cleanup.ps1
