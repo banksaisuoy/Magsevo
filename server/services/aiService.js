@@ -1,11 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Settings = require('../models/Settings');
-// We might need Log too?
-// If Log is not in Settings.js, we might need to import it from index or Log.js
-// If we can't be sure, maybe we can skip logging in AI service for now, or assume index has Log.
-// But AI Service implementation I wrote doesn't use Log.
-// It uses console.warn/error.
-// So I am fine.
 
 class AIService {
     constructor() {
@@ -60,7 +54,12 @@ class AIService {
         }
 
         try {
-            const model = this.client.getGenerativeModel({ model: this.modelName });
+            // Use v1beta API version which supports newer models like gemini-1.5-flash
+            const model = this.client.getGenerativeModel({
+                model: this.modelName,
+                apiVersion: 'v1beta'
+            });
+
             const result = await model.generateContent(prompt);
             const response = await result.response;
             return response.text();
@@ -82,6 +81,19 @@ class AIService {
         } catch (e) {
             console.error('Failed to parse AI response as JSON:', text);
             return { description: text, tags: [] };
+        }
+    }
+
+    // Method to categorize video
+    async categorizeVideo(title, description) {
+        const prompt = `Categorize the following video into one of these categories: Development, Design, Marketing. Video Title: "${title}", Description: "${description}". Return ONLY the category name.`;
+        try {
+            const text = await this.generateContent(prompt);
+            return text.trim();
+        } catch (error) {
+            console.error('Error in categorizeVideo:', error);
+            // Return default or null
+            return 'Development';
         }
     }
 }
