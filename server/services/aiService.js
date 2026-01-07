@@ -39,18 +39,28 @@ class AIService {
         }
     }
 
-    async generateContent(prompt) {
+    // Text Generation with Tools support
+    async generateContent(prompt, options = {}) {
         await this.initialize();
         if (!this.client) throw new Error('AI Service not configured');
 
         try {
+            const config = {};
+            if (options.tools) {
+                config.tools = options.tools; // e.g. [{ googleSearch: {} }, { googleMaps: {} }]
+            }
+            if (options.toolConfig) {
+                config.toolConfig = options.toolConfig;
+            }
+
             const response = await this.client.models.generateContent({
                 model: this.modelName,
                 contents: prompt,
-                config: {
-                    // responseModalities: ['TEXT'] // Default
-                }
+                config: config
             });
+
+            // Handle grounding/search results if needed
+            // For now, just return text
             return response.text();
         } catch (error) {
             console.error('AI Text Gen Error:', error);
@@ -80,24 +90,18 @@ class AIService {
         }
     }
 
-    // New: Image Generation (Thumbnail)
+    // Image Generation (Thumbnail)
     async generateImage(prompt) {
         await this.initialize();
         if (!this.client) throw new Error('AI Service not configured');
 
         try {
-            // Using Imagen model or Gemini Image model
             const model = 'gemini-3-pro-image-preview'; // Or 'imagen-3.0-generate-001'
             const response = await this.client.models.generateContent({
                 model: model,
                 contents: { parts: [{ text: prompt }] },
-                config: {
-                    // imageConfig: { aspectRatio: '16:9' } // If supported by SDK typings
-                }
             });
 
-            // Extract image data (base64)
-            // The structure might vary based on model response
             const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
             if (part?.inlineData) {
                 return `data:image/png;base64,${part.inlineData.data}`;
@@ -109,35 +113,59 @@ class AIService {
         }
     }
 
-    // New: Video Generation
+    // Video Generation
     async generateVideo(prompt) {
         await this.initialize();
         if (!this.client) throw new Error('AI Service not configured');
 
         try {
-            const model = 'veo-3.1-fast-generate-preview'; // Or user selected
-            // generateVideos might return an Operation
-            // Note: The @google/genai SDK syntax for video might differ.
-            // Based on example: ai.models.generateVideos(...)
-
+            const model = 'veo-3.1-fast-generate-preview';
             let operation = await this.client.models.generateVideos({
                 model: model,
                 prompt: prompt,
                 config: { numberOfVideos: 1 }
             });
 
-            // Polling
-            // In a real server context, we shouldn't block.
-            // But for simplicity/demo:
             while (!operation.done) {
                 await new Promise(r => setTimeout(r, 5000));
                 operation = await this.client.operations.getVideosOperation({ operation });
             }
 
             const videoUri = operation.response?.generatedVideos?.[0]?.video?.uri;
-            return videoUri; // This is a URI, might need downloading or proxying.
+            return videoUri;
         } catch (error) {
             console.error('AI Video Gen Error:', error);
+            throw error;
+        }
+    }
+
+    // New: Audio Generation (TTS)
+    async generateAudio(text, voice = 'Kore') {
+        await this.initialize();
+        if (!this.client) throw new Error('AI Service not configured');
+
+        try {
+            // Using a model that supports audio generation (e.g. gemini-2.5-flash-preview-tts)
+            const model = 'gemini-2.5-flash-preview-tts'; // Or user selected
+            const response = await this.client.models.generateContent({
+                model: model,
+                contents: { parts: [{ text: text }] },
+                config: {
+                    responseModalities: ['AUDIO'],
+                    speechConfig: {
+                        voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } }
+                    }
+                }
+            });
+
+            const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+            if (part?.inlineData) {
+                // Return base64 audio (client can decode)
+                return part.inlineData.data;
+            }
+            throw new Error('No audio generated');
+        } catch (error) {
+            console.error('AI Audio Gen Error:', error);
             throw error;
         }
     }
