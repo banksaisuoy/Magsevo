@@ -1,10 +1,6 @@
 const AIFeaturesManagement = {
     init: async function() {
         console.log('AI Features Management Initialized');
-        // Try to find the container. If dynamic loading, it might be different.
-        // We assume the admin panel creates a div with id 'ai-features-content' or similar when tab is clicked.
-        // Or we inject into a known container.
-
         this.container = document.getElementById('ai-features-content') || document.getElementById('admin-content');
         if (!this.container) return;
 
@@ -35,11 +31,6 @@ const AIFeaturesManagement = {
         const apiKey = this.settings.gemini_api_key || '';
         const model = this.settings.gemini_model || 'gemini-1.5-flash';
 
-        // Check if we need to clear container or append
-        // If we are reusing admin-content, we should probably clear it?
-        // But maybe other tabs use it.
-        // We'll replace innerHTML to be safe for this specific view.
-
         const html = `
             <div class="container-fluid">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -68,11 +59,14 @@ const AIFeaturesManagement = {
 
                                 <div class="mb-3">
                                     <label for="gemini-model" class="form-label">Model Selection</label>
-                                    <select class="form-select form-control" id="gemini-model">
-                                        <option value="gemini-1.5-flash" ${model === 'gemini-1.5-flash' ? 'selected' : ''}>Gemini 1.5 Flash (Fast & Cost-effective)</option>
-                                        <option value="gemini-1.5-pro" ${model === 'gemini-1.5-pro' ? 'selected' : ''}>Gemini 1.5 Pro (Complex Reasoning)</option>
-                                        <option value="gemini-pro" ${model === 'gemini-pro' ? 'selected' : ''}>Gemini 1.0 Pro (Standard)</option>
-                                    </select>
+                                    <input type="text" class="form-control" id="gemini-model" value="${model}" list="gemini-models-list" placeholder="Select or type model name">
+                                    <datalist id="gemini-models-list">
+                                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fast)</option>
+                                        <option value="gemini-1.5-pro">Gemini 1.5 Pro (Powerful)</option>
+                                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Experimental)</option>
+                                        <option value="gemini-pro">Gemini 1.0 Pro</option>
+                                    </datalist>
+                                    <small class="form-text text-muted">You can type a custom model name if it's not listed (e.g. gemini-3-pro-preview).</small>
                                 </div>
 
                                 <button onclick="AIFeaturesManagement.saveSettings()" class="btn btn-primary">
@@ -117,7 +111,6 @@ const AIFeaturesManagement = {
 
             const result = await response.json();
             if (result.success) {
-                // Show success message (using alert for simplicity, or toast if available)
                 alert('AI Settings Saved Successfully!');
             } else {
                 alert('Error saving settings: ' + (result.error || 'Unknown error'));
@@ -129,5 +122,4 @@ const AIFeaturesManagement = {
     }
 };
 
-// Make it global
 window.AIFeaturesManagement = AIFeaturesManagement;
