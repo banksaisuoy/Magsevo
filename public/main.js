@@ -56,6 +56,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let newPasswordInput = document.getElementById('new-password');
     let newRoleSelect = document.getElementById('new-role');
 
+    // New Elements for sorting, clearing search, back-to-top, share
+    let sortSelect = document.getElementById('sort-select');
+    let searchClearBtn = document.getElementById('search-clear');
+    let backToTopBtn = document.getElementById('back-to-top');
+
     // Helper: escape HTML to prevent XSS
     function escapeHtml(text) {
         if (text == null) return '';
@@ -998,12 +1003,53 @@ document.addEventListener('DOMContentLoaded', () => {
         videoCategorySelect.innerHTML = categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('');
     }
 
+    // Sort videos function
+    function sortVideos(videos, criteria) {
+        const sorted = [...videos];
+        switch (criteria) {
+            case 'newest':
+                // Assuming newer IDs are newer videos if no date field
+                // or use created_at if available
+                sorted.sort((a, b) => (b.created_at || b.id) > (a.created_at || a.id) ? 1 : -1);
+                break;
+            case 'oldest':
+                sorted.sort((a, b) => (a.created_at || a.id) > (b.created_at || b.id) ? 1 : -1);
+                break;
+            case 'views':
+                sorted.sort((a, b) => (b.views || 0) - (a.views || 0));
+                break;
+            case 'az':
+                sorted.sort((a, b) => a.title.localeCompare(b.title));
+                break;
+        }
+        return sorted;
+    }
+
+    // Handle sort change
+    if (sortSelect) {
+        sortSelect.addEventListener('change', () => {
+            const criteria = sortSelect.value;
+            // if we have a current filtered set, sort that; otherwise sort all
+            const listToSort = (currentFilteredVideos && currentFilteredVideos.length) ? currentFilteredVideos : allVideos;
+            const sorted = sortVideos(listToSort, criteria);
+            // update current filtered to maintain consistency if we re-filter later?
+            // simpler: just display sorted
+            displayVideos(sorted);
+        });
+    }
+
     // Filter videos by category
     function filterByCategory(category) {
+        let filtered;
         if (category === 'All') {
-            currentFilteredVideos = allVideos;
+            filtered = allVideos;
         } else {
-            currentFilteredVideos = allVideos.filter(video => video.category === category);
+            filtered = allVideos.filter(video => video.category === category);
+        }
+        currentFilteredVideos = filtered;
+        // Apply current sort
+        if (sortSelect) {
+            currentFilteredVideos = sortVideos(currentFilteredVideos, sortSelect.value);
         }
         displayVideos(currentFilteredVideos);
     }
@@ -1015,7 +1061,17 @@ document.addEventListener('DOMContentLoaded', () => {
             video.title.toLowerCase().includes(lowerCaseQuery) ||
             (video.description && video.description.toLowerCase().includes(lowerCaseQuery))
         );
-        displayVideos(filtered);
+        currentFilteredVideos = filtered;
+        if (sortSelect) {
+            currentFilteredVideos = sortVideos(currentFilteredVideos, sortSelect.value);
+        }
+        displayVideos(currentFilteredVideos);
+
+        // Show/Hide clear button
+        if (searchClearBtn) {
+            if (query.length > 0) searchClearBtn.classList.remove('hidden');
+            else searchClearBtn.classList.add('hidden');
+        }
     }
 
     // Handle login form submission
@@ -1654,6 +1710,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (searchBar) {
         searchBar.addEventListener('input', debounce((e) => { searchVideos(e.target.value); }, 300));
+    }
+
+    // Search clear button
+    if (searchClearBtn) {
+        searchClearBtn.addEventListener('click', () => {
+            if (searchBar) {
+                searchBar.value = '';
+                searchVideos('');
+                searchBar.focus();
+            }
+        });
+    }
+
+    // Back to top
+    if (backToTopBtn) {
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTopBtn.classList.remove('opacity-0', 'translate-y-20');
+            } else {
+                backToTopBtn.classList.add('opacity-0', 'translate-y-20');
+            }
+        });
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
     }
 
     // Close modals with the modal-close top-right buttons

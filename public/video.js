@@ -18,6 +18,7 @@
     const likeBtn = document.getElementById('like-btn');
     const reportBtn = document.getElementById('report-btn');
     const favBtn = document.getElementById('fav-btn');
+    const shareBtn = document.getElementById('share-btn');
     const commentText = document.getElementById('comment-text');
     const postComment = document.getElementById('post-comment');
     const commentList = document.getElementById('comment-list');
@@ -106,6 +107,21 @@
                 } catch (e) { console.error(e); }
             });
             loadFavState();
+        }
+
+        // Share button
+        if (shareBtn) {
+            shareBtn.addEventListener('click', async () => {
+                const url = window.location.href;
+                try {
+                    await navigator.clipboard.writeText(url);
+                    const originalText = shareBtn.innerHTML;
+                    shareBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+                    setTimeout(() => { shareBtn.innerHTML = originalText; }, 2000);
+                } catch (err) {
+                    alert('Failed to copy link');
+                }
+            });
         }
 
         // continue watching
