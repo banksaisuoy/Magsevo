@@ -35,7 +35,10 @@ async function initializeApp() {
     try {
         db = await dbInstance.connect();
         console.log('Connected to SQLite database.');
+
+        // Ensure tables are created sequentially
         await initDatabase();
+
         // Create database indexes for optimization
         await dbInstance.createIndexes();
 
@@ -64,6 +67,7 @@ async function initializeApp() {
 
         // Mount API routes
         app.use('/api', apiRoutes);
+        app.use('/api/settings', require('./routes/settings'));
 
         // Serve frontend
         app.get('/', (req, res) => {
@@ -104,7 +108,7 @@ async function initializeApp() {
 }
 
 // Initialize database tables
-function initDatabase() {
+async function initDatabase() {
     const tables = [
         `CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
@@ -173,157 +177,23 @@ function initDatabase() {
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`,
-        // Additional tables for enterprise features
-        `CREATE TABLE IF NOT EXISTS tags (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE,
-            description TEXT,
-            color TEXT DEFAULT '#2563eb',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`,
-        `CREATE TABLE IF NOT EXISTS video_tags (
-            videoId INTEGER,
-            tagId INTEGER,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (videoId, tagId),
-            FOREIGN KEY(videoId) REFERENCES videos(id) ON DELETE CASCADE,
-            FOREIGN KEY(tagId) REFERENCES tags(id) ON DELETE CASCADE
-        )`,
-        `CREATE TABLE IF NOT EXISTS playlists (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            description TEXT,
-            userId TEXT,
-            is_public BOOLEAN DEFAULT 0,
-            is_active BOOLEAN DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(userId) REFERENCES users(username)
-        )`,
-        `CREATE TABLE IF NOT EXISTS playlist_videos (
-            playlistId INTEGER,
-            videoId INTEGER,
-            position INTEGER,
-            added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (playlistId, videoId),
-            FOREIGN KEY(playlistId) REFERENCES playlists(id) ON DELETE CASCADE,
-            FOREIGN KEY(videoId) REFERENCES videos(id) ON DELETE CASCADE
-        )`,
-        `CREATE TABLE IF NOT EXISTS user_groups (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE,
-            description TEXT,
-            color TEXT DEFAULT '#3b82f6',
-            is_active BOOLEAN DEFAULT 1,
-            created_by TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(created_by) REFERENCES users(username)
-        )`,
-        `CREATE TABLE IF NOT EXISTS user_group_members (
-            group_id INTEGER,
-            username TEXT,
-            role_in_group TEXT DEFAULT 'member',
-            added_by TEXT,
-            is_active BOOLEAN DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (group_id, username),
-            FOREIGN KEY(group_id) REFERENCES user_groups(id) ON DELETE CASCADE,
-            FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE,
-            FOREIGN KEY(added_by) REFERENCES users(username)
-        )`,
-        `CREATE TABLE IF NOT EXISTS permissions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE,
-            description TEXT,
-            category TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`,
-        `CREATE TABLE IF NOT EXISTS user_permissions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT,
-            permission_id INTEGER,
-            granted_by TEXT,
-            is_active BOOLEAN DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(username, permission_id),
-            FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE,
-            FOREIGN KEY(permission_id) REFERENCES permissions(id) ON DELETE CASCADE,
-            FOREIGN KEY(granted_by) REFERENCES users(username)
-        )`,
-        `CREATE TABLE IF NOT EXISTS group_permissions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            group_id INTEGER,
-            permission_id INTEGER,
-            granted_by TEXT,
-            is_active BOOLEAN DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(group_id, permission_id),
-            FOREIGN KEY(group_id) REFERENCES user_groups(id) ON DELETE CASCADE,
-            FOREIGN KEY(permission_id) REFERENCES permissions(id) ON DELETE CASCADE,
-            FOREIGN KEY(granted_by) REFERENCES users(username)
-        )`,
-        `CREATE TABLE IF NOT EXISTS audit_trail (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            userId TEXT,
-            action TEXT NOT NULL,
-            resource_type TEXT,
-            resource_id TEXT,
-            old_values TEXT,
-            new_values TEXT,
-            ip_address TEXT,
-            user_agent TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(userId) REFERENCES users(username)
-        )`,
-        `CREATE TABLE IF NOT EXISTS content_schedule (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            videoId INTEGER,
-            publish_at DATETIME NOT NULL,
-            action_type TEXT DEFAULT 'publish',
-            scheduled_by TEXT,
-            description TEXT,
-            status TEXT DEFAULT 'pending',
-            executed_at DATETIME,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(videoId) REFERENCES videos(id),
-            FOREIGN KEY(scheduled_by) REFERENCES users(username)
-        )`,
-        `CREATE TABLE IF NOT EXISTS password_policies (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            min_length INTEGER DEFAULT 8,
-            require_uppercase BOOLEAN DEFAULT 1,
-            require_lowercase BOOLEAN DEFAULT 1,
-            require_numbers BOOLEAN DEFAULT 1,
-            require_special_chars BOOLEAN DEFAULT 1,
-            max_age_days INTEGER DEFAULT 90,
-            history_count INTEGER DEFAULT 5,
-            lockout_attempts INTEGER DEFAULT 5,
-            lockout_duration_minutes INTEGER DEFAULT 30,
-            is_active BOOLEAN DEFAULT 0,
-            created_by TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(created_by) REFERENCES users(username)
         )`
     ];
 
-    tables.forEach((table) => {
-        db.run(table, (err) => {
-            if (err) {
-                console.error('Error creating table:', err.message);
-            }
-        });
-    });
+    // Use dbInstance.run (Promise-based) if available, or wrap db.run
+    // dbInstance.run is available if Database.js implements it (it does in our restored version)
+    // But we need to use dbInstance, not raw db (sqlite object)
+
+    for (const table of tables) {
+        try {
+            await dbInstance.run(table);
+        } catch (err) {
+            console.error('Error creating table:', err.message);
+        }
+    }
 
     // Insert default data
-    seedDatabase();
+    await seedDatabase();
 }
 
 // Seed database with initial data
@@ -332,74 +202,32 @@ async function seedDatabase() {
     const adminPassword = await bcrypt.hash('123456', 10);
     const userPassword = await bcrypt.hash('123456', 10);
 
-    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
+    // We use raw sql here, so wrap in promise or use dbInstance.run
+    const run = (sql, params) => dbInstance.run(sql, params);
+
+    await run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
            ['admin', adminPassword, 'admin']);
-    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
+    await run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
            ['user', userPassword, 'user']);
 
     // Create default categories
     const categories = ['Development', 'Design', 'Marketing'];
-    categories.forEach(category => {
-        db.run(`INSERT OR IGNORE INTO categories (name) VALUES (?)`, [category]);
-    });
+    for (const category of categories) {
+        await run(`INSERT OR IGNORE INTO categories (name) VALUES (?)`, [category]);
+    }
 
-    // Create default videos
-    const videos = [
-        {
-            title: 'Introduction to Web Development',
-            description: 'An introductory course to web development fundamentals, covering HTML, CSS, and JavaScript.',
-            thumbnailUrl: 'https://placehold.co/400x225/2a9d8f/c9d1d9?text=WebDev',
-            videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-            views: 1500,
-            isFeatured: 1,
-            categoryId: 1
-        },
-        {
-            title: 'Getting Started with UI/UX Design',
-            description: 'Learn the basics of user interface and user experience design.',
-            thumbnailUrl: 'https://placehold.co/400x225/e9c46a/264653?text=UI/UX',
-            videoUrl: 'https://www.youtube.com/watch?v=S01mP-mR8Ew',
-            views: 800,
-            isFeatured: 0,
-            categoryId: 2
-        },
-        {
-            title: 'The Power of Digital Marketing',
-            description: 'A guide to digital marketing strategies and tools for your business.',
-            thumbnailUrl: 'https://placehold.co/400x225/f4a261/264653?text=Marketing',
-            videoUrl: 'https://www.youtube.com/watch?v=N_x011_x-wU',
-            views: 1200,
-            isFeatured: 0,
-            categoryId: 3
-        },
-        {
-            title: 'JavaScript Advanced Concepts',
-            description: 'Deep dive into advanced topics in JavaScript programming language.',
-            thumbnailUrl: 'https://placehold.co/400x225/e76f51/264653?text=JS+Advanced',
-            videoUrl: 'https://www.youtube.com/watch?v=XF-gqK7yB1A',
-            views: 2500,
-            isFeatured: 0,
-            categoryId: 1
-        },
-        {
-            title: 'Introduction to Figma',
-            description: 'Master the basics of Figma, a powerful tool for collaborative design.',
-            thumbnailUrl: 'https://placehold.co/400x225/264653/e9c46a?text=Figma',
-            videoUrl: 'https://www.youtube.com/watch?v=Ft7L7X7N-6o',
-            views: 600,
-            isFeatured: 0,
-            categoryId: 2
-        }
-    ];
+    // Settings
+    await run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['siteName', 'VisionHub']);
+    await run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['primaryColor', '#2a9d8f']);
 
-    videos.forEach(video => {
-        db.run(`INSERT OR IGNORE INTO videos (title, description, thumbnailUrl, videoUrl, views, isFeatured, categoryId) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-               [video.title, video.description, video.thumbnailUrl, video.videoUrl, video.views, video.isFeatured, video.categoryId]);
-    });
+    // Default Report Reasons (if table exists - we didn't add it in tables array in this file,
+    // but it might exist from setup.js or previous runs)
+    // To be safe, let's create it if we need it, or skip.
+    // The previous setup.js had it.
 
-    // Create default settings
-    db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['siteName', 'VisionHub']);
-    db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['primaryColor', '#2a9d8f']);
+    // We skip video seeding here to avoid FK issues and duplication.
+    // Video seeding is better handled by setup.js which is smarter.
+    // server.js should only ensure critical data (users, settings).
 }
 
 // Authentication middleware

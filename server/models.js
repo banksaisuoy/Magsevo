@@ -135,7 +135,7 @@ class Database {
     async getStatistics() {
         try {
             const stats = {};
-            
+
             // Get table row counts
             const tables = ['users', 'videos', 'categories', 'comments', 'user_favorites', 'logs'];
             for (const table of tables) {
@@ -177,7 +177,7 @@ class User {
     static async update(db, username, userData) {
         const updates = [];
         const values = [];
-        
+
         if (userData.password) {
             updates.push('password = ?');
             values.push(await bcrypt.hash(userData.password, 10));
@@ -206,9 +206,9 @@ class User {
             updates.push('phone = ?');
             values.push(userData.phone);
         }
-        
+
         values.push(username);
-        
+
         return await db.run(
             `UPDATE users SET ${updates.join(', ')} WHERE username = ?`,
             values
@@ -227,38 +227,38 @@ class User {
 class Video {
     static async getAll(db) {
         return await db.all(`
-            SELECT v.*, c.name as categoryName 
-            FROM videos v 
-            LEFT JOIN categories c ON v.categoryId = c.id 
+            SELECT v.*, c.name as categoryName
+            FROM videos v
+            LEFT JOIN categories c ON v.categoryId = c.id
             ORDER BY v.created_at DESC
         `);
     }
 
     static async getById(db, id) {
         return await db.get(`
-            SELECT v.*, c.name as categoryName 
-            FROM videos v 
-            LEFT JOIN categories c ON v.categoryId = c.id 
+            SELECT v.*, c.name as categoryName
+            FROM videos v
+            LEFT JOIN categories c ON v.categoryId = c.id
             WHERE v.id = ?
         `, [id]);
     }
 
     static async getFeatured(db) {
         return await db.all(`
-            SELECT v.*, c.name as categoryName 
-            FROM videos v 
-            LEFT JOIN categories c ON v.categoryId = c.id 
-            WHERE v.isFeatured = 1 
+            SELECT v.*, c.name as categoryName
+            FROM videos v
+            LEFT JOIN categories c ON v.categoryId = c.id
+            WHERE v.isFeatured = 1
             ORDER BY v.created_at DESC
         `);
     }
 
     static async getTrending(db, limit = 4) {
         return await db.all(`
-            SELECT v.*, c.name as categoryName 
-            FROM videos v 
-            LEFT JOIN categories c ON v.categoryId = c.id 
-            ORDER BY v.views DESC 
+            SELECT v.*, c.name as categoryName
+            FROM videos v
+            LEFT JOIN categories c ON v.categoryId = c.id
+            ORDER BY v.views DESC
             LIMIT ?
         `, [limit]);
     }
@@ -266,9 +266,9 @@ class Video {
     static async search(db, query) {
         const searchTerm = `%${query}%`;
         return await db.all(`
-            SELECT v.*, c.name as categoryName 
-            FROM videos v 
-            LEFT JOIN categories c ON v.categoryId = c.id 
+            SELECT v.*, c.name as categoryName
+            FROM videos v
+            LEFT JOIN categories c ON v.categoryId = c.id
             WHERE v.title LIKE ? OR v.description LIKE ? OR c.name LIKE ?
             ORDER BY v.created_at DESC
         `, [searchTerm, searchTerm, searchTerm]);
@@ -276,7 +276,7 @@ class Video {
 
     static async create(db, videoData) {
         return await db.run(`
-            INSERT INTO videos (title, description, thumbnailUrl, videoUrl, categoryId, isFeatured) 
+            INSERT INTO videos (title, description, thumbnailUrl, videoUrl, categoryId, isFeatured)
             VALUES (?, ?, ?, ?, ?, ?)
         `, [
             videoData.title,
@@ -290,7 +290,7 @@ class Video {
 
     static async update(db, id, videoData) {
         return await db.run(`
-            UPDATE videos 
+            UPDATE videos
             SET title = ?, description = ?, thumbnailUrl = ?, videoUrl = ?, categoryId = ?, isFeatured = ?
             WHERE id = ?
         `, [
@@ -338,11 +338,11 @@ class Category {
 class Favorite {
     static async getUserFavorites(db, userId) {
         return await db.all(`
-            SELECT v.*, c.name as categoryName 
-            FROM videos v 
-            LEFT JOIN categories c ON v.categoryId = c.id 
-            INNER JOIN user_favorites uf ON v.id = uf.videoId 
-            WHERE uf.userId = ? 
+            SELECT v.*, c.name as categoryName
+            FROM videos v
+            LEFT JOIN categories c ON v.categoryId = c.id
+            INNER JOIN user_favorites uf ON v.id = uf.videoId
+            WHERE uf.userId = ?
             ORDER BY uf.created_at DESC
         `, [userId]);
     }
@@ -373,8 +373,8 @@ class Favorite {
 class Comment {
     static async getByVideoId(db, videoId) {
         return await db.all(`
-            SELECT * FROM comments 
-            WHERE videoId = ? 
+            SELECT * FROM comments
+            WHERE videoId = ?
             ORDER BY created_at DESC
         `, [videoId]);
     }
@@ -394,9 +394,9 @@ class Comment {
 class Report {
     static async getAll(db) {
         return await db.all(`
-            SELECT r.*, v.title as videoTitle 
-            FROM reports r 
-            LEFT JOIN videos v ON r.videoId = v.id 
+            SELECT r.*, v.title as videoTitle
+            FROM reports r
+            LEFT JOIN videos v ON r.videoId = v.id
             ORDER BY r.created_at DESC
         `);
     }
@@ -476,13 +476,13 @@ class ReportReason {
 class UserGroup {
     static async getAll(db) {
         return await db.all(`
-            SELECT ug.*, 
+            SELECT ug.*,
                    COUNT(ugm.username) as member_count,
                    u.username as created_by_name
-            FROM user_groups ug 
+            FROM user_groups ug
             LEFT JOIN user_group_members ugm ON ug.id = ugm.group_id AND ugm.is_active = 1
             LEFT JOIN users u ON ug.created_by = u.username
-            WHERE ug.is_active = 1 
+            WHERE ug.is_active = 1
             GROUP BY ug.id
             ORDER BY ug.name
         `);
@@ -609,12 +609,12 @@ class PasswordPolicy {
     static async create(db, policyData) {
         // Deactivate current active policy
         await db.run('UPDATE password_policies SET is_active = 0 WHERE is_active = 1');
-        
+
         return await db.run(`
-            INSERT INTO password_policies 
-            (name, min_length, require_uppercase, require_lowercase, require_numbers, 
-             require_special_chars, max_age_days, history_count, lockout_attempts, 
-             lockout_duration_minutes, is_active, created_by) 
+            INSERT INTO password_policies
+            (name, min_length, require_uppercase, require_lowercase, require_numbers,
+             require_special_chars, max_age_days, history_count, lockout_attempts,
+             lockout_duration_minutes, is_active, created_by)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
         `, [
             policyData.name,
@@ -789,7 +789,7 @@ class Playlist {
             );
             position = result.nextPosition;
         }
-        
+
         return await db.run(
             'INSERT OR REPLACE INTO playlist_videos (playlistId, videoId, position) VALUES (?, ?, ?)',
             [playlistId, videoId, position]
@@ -804,7 +804,7 @@ class Playlist {
     }
 
     static async reorderVideos(db, playlistId, videoOrders) {
-        const promises = videoOrders.map(({ videoId, position }) => 
+        const promises = videoOrders.map(({ videoId, position }) =>
             db.run(
                 'UPDATE playlist_videos SET position = ? WHERE playlistId = ? AND videoId = ?',
                 [position, playlistId, videoId]
@@ -918,22 +918,22 @@ class AuditTrail {
             query += ' AND at.userId = ?';
             params.push(filters.userId);
         }
-        
+
         if (filters.action) {
             query += ' AND at.action LIKE ?';
             params.push(`%${filters.action}%`);
         }
-        
+
         if (filters.resource_type) {
             query += ' AND at.resource_type = ?';
             params.push(filters.resource_type);
         }
-        
+
         if (filters.dateFrom) {
             query += ' AND at.created_at >= ?';
             params.push(filters.dateFrom);
         }
-        
+
         if (filters.dateTo) {
             query += ' AND at.created_at <= ?';
             params.push(filters.dateTo);

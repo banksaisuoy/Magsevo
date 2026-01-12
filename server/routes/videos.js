@@ -181,18 +181,23 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
             return res.status(404).json({ error: 'Video not found' });
         }
 
-        if (!title || !videoUrl || !categoryId) {
-            return res.status(400).json({ error: 'Title, video URL, and category are required' });
+        // For updates, we don't require all fields to be present
+        // Only require title (categoryId will use existing if not provided)
+        if (!title) {
+            return res.status(400).json({ error: 'Title is required' });
         }
 
-        await Video.update(db, id, {
+        // Use existing values if new ones are not provided
+        const updateData = {
             title,
-            description,
-            thumbnailUrl,
-            videoUrl,
-            categoryId,
-            isFeatured: !!isFeatured
-        });
+            description: description !== undefined ? description : existingVideo.description,
+            thumbnailUrl: thumbnailUrl || existingVideo.thumbnailUrl,
+            videoUrl: videoUrl || existingVideo.videoUrl,
+            categoryId: categoryId || existingVideo.categoryId,
+            isFeatured: isFeatured !== undefined ? !!isFeatured : !!existingVideo.isFeatured
+        };
+
+        await Video.update(db, id, updateData);
 
         await Log.create(db, req.user.username, 'Update Video', `Updated video ID: ${id}`);
 
