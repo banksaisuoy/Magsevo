@@ -439,6 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to get YouTube video ID from a URL
     function getYouTubeVideoId(url) {
+        if (!url) return null;
         const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
         const match = url.match(regex);
         return (match && match[1]) ? match[1] : null;
@@ -460,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return fetch(url, opts);
     }
 
-    // Expose helpers for bridge
+    // Expose helpers for bridge and external modules
     window.VisionHub = {
         apiFetch,
         showToast,
@@ -470,6 +471,27 @@ document.addEventListener('DOMContentLoaded', () => {
         ensureElement
     };
 
+    // Expose legacy actions for Omnibar
+    window.MagsevoLegacy = {
+        openSettings: () => {
+            const btn = document.getElementById('admin-settings');
+            if (btn) btn.click();
+        },
+        openReports: () => {
+            const btn = document.getElementById('admin-view-reports');
+            if (btn) btn.click();
+        },
+        triggerBackup: () => {
+            // Need to find the backup button in the backup module
+            // This is tricky because it's rendered dynamically.
+            // Best bet is to open the admin panel to the backup tab.
+            // But we don't have a direct "open tab" function exposed easily.
+            // Let's at least open the admin panel if we can.
+            const btn = document.querySelector('[data-legacy-module="backup-system"]');
+            if (btn) btn.click();
+        }
+    };
+
     // Check admin authentication status and show/hide controls
     async function checkAuthStatus() {
         try {
@@ -477,6 +499,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!token) throw new Error('No token');
 
             const res = await apiFetch('/api/auth/verify');
+
+            // Check content type for JSON
+            const contentType = res.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                // If 404 HTML or other, throw to catch block
+                throw new Error("Invalid response from auth check");
+            }
+
             if (!res.ok) throw new Error('Auth check failed');
 
             const data = await res.json();
@@ -532,40 +562,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (e) { console.error('Auth check display error', e); }
                 return;
             }
-
-            // Authenticated: show main UI
-            hideModal(loginModal);
-            document.getElementById('main-header').classList.remove('hidden');
-            document.getElementById('main-content').classList.remove('hidden');
-            adminLoginBtn.classList.add('hidden');
-            adminLogoutBtn.classList.remove('hidden');
-
-            // Role handling: admin vs normal user
-            const isAdmin = user && user.role === 'admin';
-            if (isAdmin) {
-                adminTools.classList.remove('hidden');
-                if (addVideoBtn) addVideoBtn.classList.remove('hidden');
-            } else {
-                adminTools.classList.add('hidden');
-                if (addVideoBtn) addVideoBtn.classList.add('hidden');
-            }
-            // Toggle individual video card admin controls (if gallery is already rendered)
-            document.querySelectorAll('.admin-controls').forEach(controls => {
-                if (isAdmin) controls.classList.remove('hidden'); else controls.classList.add('hidden');
-            });
-            // Load app data once authenticated
-            await fetchSettings();
-            await fetchVideos();
-            await fetchCategories();
-            await fetchTags();
-            // show favorites/history buttons for logged-in users
-            if (favoritesBtn) favoritesBtn.classList.remove('hidden');
-            if (historyBtn) historyBtn.classList.remove('hidden');
-        } catch (err) {
-            console.error('Failed to check auth status:', err);
-            // On any failure to reach auth endpoint, keep login modal visible
-            try { const lm = document.getElementById('login-modal'); if (lm) lm.style.display = 'flex'; } catch(e){}
-        }
     }
 
     // Fetch site settings (title, primary color)
@@ -591,7 +587,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await apiFetch('/api/videos');
             if (res.ok) {
-                allVideos = await res.json();
+                const data = await res.json();
+                allVideos = Array.isArray(data) ? data : (data.videos || []);
                 displayVideos(allVideos);
                 // Refresh homepage extras (featured/trending/popular/continue)
                 try { populateHomepageExtras(); } catch(e) { console.error('populateHomepageExtras failed', e); }
@@ -613,7 +610,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await apiFetch('/api/categories');
             if (res.ok) {
-                allCategories = await res.json();
+                const data = await res.json();
+                allCategories = Array.isArray(data) ? data : (data.categories || []);
                 displayCategories(allCategories);
                 populateCategoryDropdown(allCategories);
             } else {
@@ -833,11 +831,16 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const fRes = await apiFetch('/api/videos');
             if (fRes.ok) {
-                const all = await fRes.json();
+                const data = await fRes.json();
+                const all = Array.isArray(data) ? data : (data.videos || []);
                 // Prefer admin-marked featured, otherwise pick top of weekly trending
                 const featured = all.filter(v => v.featured == 1 || v.featured === '1');
                 const trendingRes = await apiFetch('/api/videos/trending');
-                const trending = trendingRes.ok ? await trendingRes.json() : [];
+                let trending = [];
+                if (trendingRes.ok) {
+                    const tData = await trendingRes.json();
+                    trending = Array.isArray(tData) ? tData : (tData.videos || []);
+                }
                 const weeklyTop = trending.slice(0,5);
                 const featuredWrap = document.getElementById('featured-wrap');
                 if (featured.length) {
@@ -863,7 +866,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await apiFetch('/api/categories');
             const pc = document.getElementById('popular-cats-list');
             let cats = [];
-            if (res.ok) cats = await res.json();
+            if (res.ok) {
+                const cData = await res.json();
+                cats = Array.isArray(cData) ? cData : (cData.categories || []);
+            }
             // derive counts from videos
             const freq = {};
             (allVideos||[]).forEach(v => { const name = v.category || 'Uncategorized'; freq[name] = (freq[name]||0)+1; });
@@ -928,7 +934,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await apiFetch('/api/favorites');
             if (!res.ok) return;
-            const favs = await res.json();
+            const data = await res.json();
+            const favs = Array.isArray(data) ? data : (data.favorites || []);
             // Server returns video rows for /api/favorites; the video id is available as `id`.
             favoriteIds = new Set((favs || []).map(f => String(f.id ?? f.video_id ?? f.videoId ?? f.video)));
             // mark buttons
@@ -1087,6 +1094,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ username, password }),
             });
 
+            // Check content type for JSON
+            const contentType = res.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await res.text();
+                console.error("Login response not JSON:", text);
+                throw new Error("Server returned non-JSON response");
+            }
+
             const data = await res.json();
             if (res.ok && data.success) {
                 if (data.token) {
@@ -1096,10 +1111,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Re-check auth which will reveal UI according to role
                 await checkAuthStatus();
             } else {
-                const data = await res.json();
                 showToast(data.error || translations[currentLang]['loginFailed'] || 'Login failed', 3500, 'error');
             }
         } catch (err) {
+            console.error(err);
             showMessage(translations[currentLang]['failedFetch']);
         }
     });

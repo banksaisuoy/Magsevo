@@ -2,7 +2,7 @@ services:
   - type: web
     name: visionhub-cms
     env: node
-    buildCommand: npm install && npm run setup
+    buildCommand: npm install && npm run build && npm run setup
     startCommand: npm start
     envVars:
       - key: NODE_VERSION

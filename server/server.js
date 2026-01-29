@@ -30,6 +30,24 @@ const dbPath = process.env.DB_PATH || path.join(__dirname, 'visionhub.db');
 const dbInstance = new Database(dbPath);
 let db;
 
+// Helper to run queries as promises
+function runQuery(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        db.run(sql, params, function(err) {
+            if (err) {
+                 // Log but don't crash for constraint violations during seed (e.g. duplicates)
+                 if (err.code === 'SQLITE_CONSTRAINT') {
+                     // console.warn('Constraint error (expected during seed):', err.message);
+                     resolve(null);
+                 } else {
+                     reject(err);
+                 }
+            }
+            else resolve(this);
+        });
+    });
+}
+
 // Initialize database connection and start server
 async function initializeApp() {
     try {
@@ -104,7 +122,7 @@ async function initializeApp() {
 }
 
 // Initialize database tables
-function initDatabase() {
+async function initDatabase() {
     const tables = [
         `CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
@@ -314,16 +332,19 @@ function initDatabase() {
         )`
     ];
 
-    tables.forEach((table) => {
-        db.run(table, (err) => {
-            if (err) {
-                console.error('Error creating table:', err.message);
-            }
+    for (const table of tables) {
+        await new Promise((resolve, reject) => {
+            db.run(table, (err) => {
+                if (err) {
+                    console.error('Error creating table:', err.message);
+                }
+                resolve();
+            });
         });
-    });
+    }
 
     // Insert default data
-    seedDatabase();
+    await seedDatabase();
 }
 
 // Seed database with initial data
@@ -332,16 +353,16 @@ async function seedDatabase() {
     const adminPassword = await bcrypt.hash('123456', 10);
     const userPassword = await bcrypt.hash('123456', 10);
 
-    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
+    await runQuery(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
            ['admin', adminPassword, 'admin']);
-    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
+    await runQuery(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
            ['user', userPassword, 'user']);
 
     // Create default categories
     const categories = ['Development', 'Design', 'Marketing'];
-    categories.forEach(category => {
-        db.run(`INSERT OR IGNORE INTO categories (name) VALUES (?)`, [category]);
-    });
+    for (const category of categories) {
+        await runQuery(`INSERT OR IGNORE INTO categories (name) VALUES (?)`, [category]);
+    }
 
     // Create default videos
     const videos = [
@@ -392,14 +413,14 @@ async function seedDatabase() {
         }
     ];
 
-    videos.forEach(video => {
-        db.run(`INSERT OR IGNORE INTO videos (title, description, thumbnailUrl, videoUrl, views, isFeatured, categoryId) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    for (const video of videos) {
+        await runQuery(`INSERT OR IGNORE INTO videos (title, description, thumbnailUrl, videoUrl, views, isFeatured, categoryId) VALUES (?, ?, ?, ?, ?, ?, ?)`,
                [video.title, video.description, video.thumbnailUrl, video.videoUrl, video.views, video.isFeatured, video.categoryId]);
-    });
+    }
 
     // Create default settings
-    db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['siteName', 'VisionHub']);
-    db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['primaryColor', '#2a9d8f']);
+    await runQuery(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['siteName', 'VisionHub']);
+    await runQuery(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, ['primaryColor', '#2a9d8f']);
 }
 
 // Authentication middleware

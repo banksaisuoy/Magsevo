@@ -39,10 +39,21 @@
 
     try {
         const res = await apiFetch('/api/videos');
-        const videos = await res.json();
+        // Check for JSON response
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.error("Non-JSON response for videos list");
+            titleEl.textContent = "Error loading video";
+            return;
+        }
+
+        const data = await res.json();
+        // Handle if API returns { success: true, videos: [...] } or just array
+        const videos = Array.isArray(data) ? data : (data.videos || []);
+
         const vid = videos.find(v=>String(v.id)===String(id));
         if (!vid) { titleEl.textContent = 'Video not found'; return; }
-        titleEl.textContent = vid.title; metaEl.textContent = `${vid.category || ''} • ${new Date(vid.upload_date||'').toLocaleString()}`;
+        titleEl.textContent = vid.title; metaEl.textContent = `${vid.category || ''} • ${new Date(vid.upload_date||vid.created_at||Date.now()).toLocaleString()}`;
         // Use textContent for description to prevent XSS
         descEl.textContent = vid.description || '';
 
