@@ -384,11 +384,11 @@ const App = {
                 <div class="featured-video">
                     <div class="featured-content">
                         <div class="featured-image-container">
-                            <img data-video-id="${featuredVideo.id}" src="${featuredVideo.thumbnailUrl}" alt="${featuredVideo.title}" class="video-card-img cursor-pointer">
+                            <img data-video-id="${featuredVideo.id}" src="${featuredVideo.thumbnailUrl}" alt="${this.escapeHtml(featuredVideo.title)}" class="video-card-img cursor-pointer">
                         </div>
                         <div class="featured-text-container">
-                            <h3 class="featured-title">${featuredVideo.title}</h3>
-                            <p class="featured-description">${featuredVideo.description}</p>
+                            <h3 class="featured-title">${this.escapeHtml(featuredVideo.title)}</h3>
+                            <p class="featured-description">${this.escapeHtml(featuredVideo.description)}</p>
                             <button data-video-id="${featuredVideo.id}" class="btn btn-primary mt-4">
                                 Watch Now
                             </button>
@@ -433,7 +433,7 @@ const App = {
 
         const categoriesHtml = categories.map(cat => `
             <div class="card cursor-pointer" data-category-id="${cat.id}">
-                <h3 class="text-xl font-bold text-primary">${cat.name}</h3>
+                <h3 class="text-xl font-bold text-primary">${this.escapeHtml(cat.name)}</h3>
                 <p class="text-sm text-secondary mt-2">
                     ${videosToRender.filter(v => v.categoryId === cat.id).length} videos
                 </p>
@@ -454,9 +454,9 @@ const App = {
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             ${trendingVideos.map(video => `
                                 <div class="video-card" data-video-id="${video.id}">
-                                    <img src="${video.thumbnailUrl}" alt="${video.title}" class="video-card-img">
+                                    <img src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
                                     <div class="video-card-content">
-                                        <h3 class="video-card-title">${video.title}</h3>
+                                        <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                         <p class="video-card-meta">${video.views} views</p>
                                     </div>
                                 </div>
@@ -479,10 +479,10 @@ const App = {
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                         ${videosToRender.length > 0 ? videosToRender.map(video => `
                             <div class="video-card" data-video-id="${video.id}">
-                                <img src="${video.thumbnailUrl}" alt="${video.title}" class="video-card-img">
+                                <img src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
                                 <div class="video-card-content">
-                                    <h3 class="video-card-title">${video.title}</h3>
-                                    <p class="video-card-meta">Category: ${video.categoryName}</p>
+                                    <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
+                                    <p class="video-card-meta">Category: ${this.escapeHtml(video.categoryName)}</p>
                                 </div>
                             </div>
                         `).join('') : '<div class="text-center text-muted col-span-full">No videos found</div>'}
@@ -611,10 +611,10 @@ Object.assign(App, {
                             </div>
                             <div class="p-6">
                                 <div class="flex items-start justify-between mb-4">
-                                    <h1 class="text-3xl font-bold">${video.title}</h1>
+                                    <h1 class="text-3xl font-bold">${this.escapeHtml(video.title)}</h1>
                                     <div class="flex space-x-2">
                                         <button id="favorite-btn" class="btn-icon ${isFavorited ? 'btn-danger' : 'btn-secondary'}" data-id="${video.id}">
-                                            <svg xmlns="http:
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                                                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5A5.48 5.48 0 017.5 3C9.07 3 10.64 3.94 12 5.34c1.36-1.4 2.93-2.34 4.5-2.34A5.48 5.48 0 0122 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                                             </svg>
                                         </button>
@@ -625,8 +625,8 @@ Object.assign(App, {
                                         </button>
                                     </div>
                                 </div>
-                                <p class="text-secondary mb-2">${video.description}</p>
-                                <p class="text-sm text-muted">Category: ${video.categoryName} | Views: ${video.views}</p>
+                                <p class="text-secondary mb-2">${this.escapeHtml(video.description)}</p>
+                                <p class="text-sm text-muted">Category: ${this.escapeHtml(video.categoryName)} | Views: ${video.views}</p>
                             </div>
                         </div>
 
@@ -650,10 +650,10 @@ Object.assign(App, {
                             <div class="space-y-4">
                                 ${relatedVideos.length > 0 ? relatedVideos.map(video => `
                                     <div class="flex items-center space-x-4 p-2 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors" data-video-id="${video.id}">
-                                        <img class="w-24 h-auto rounded-lg" src="${video.thumbnailUrl}" alt="${video.title}">
+                                        <img class="w-24 h-auto rounded-lg" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}">
                                         <div class="flex-1">
-                                            <h4 class="font-semibold text-sm">${video.title}</h4>
-                                            <p class="text-xs text-secondary">${video.categoryName}</p>
+                                            <h4 class="font-semibold text-sm">${this.escapeHtml(video.title)}</h4>
+                                            <p class="text-xs text-secondary">${this.escapeHtml(video.categoryName)}</p>
                                         </div>
                                     </div>
                                 `).join('') : '<p class="text-muted">No related videos found</p>'}
@@ -710,10 +710,10 @@ Object.assign(App, {
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             ${favorites.length > 0 ? favorites.map(video => `
                                 <div class="video-card" data-video-id="${video.id}">
-                                    <img src="${video.thumbnailUrl}" alt="${video.title}" class="video-card-img">
+                                    <img src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
                                     <div class="video-card-content">
-                                        <h3 class="video-card-title">${video.title}</h3>
-                                        <p class="video-card-meta">Category: ${video.categoryName}</p>
+                                        <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
+                                        <p class="video-card-meta">Category: ${this.escapeHtml(video.categoryName)}</p>
                                     </div>
                                 </div>
                             `).join('') : '<div class="text-center text-muted col-span-full">You don\'t have any videos in your favorites yet</div>'}
@@ -1128,10 +1128,10 @@ Object.assign(App, {
             const commentsHtml = comments.map(comment => `
                 <div class="comment-item">
                     <div class="comment-header">
-                        <span class="comment-author">${comment.userId}</span>
+                        <span class="comment-author">${this.escapeHtml(comment.userId)}</span>
                         <span class="comment-date">${new Date(comment.created_at).toLocaleDateString()}</span>
                     </div>
-                    <p class="comment-text">${comment.text}</p>
+                    <p class="comment-text">${this.escapeHtml(comment.text)}</p>
                 </div>
             `).join('');
 

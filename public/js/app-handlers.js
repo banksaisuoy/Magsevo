@@ -386,6 +386,15 @@ Object.assign(App, {
     },
 
     // Utility methods
+    escapeHtml(unsafe) {
+        if (unsafe === null || unsafe === undefined) return '';
+        return String(unsafe)
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    },
     getVideoEmbed(url) {
         // Handle empty or invalid URLs
         if (!url || typeof url !== 'string') {
