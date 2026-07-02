@@ -18,10 +18,10 @@ Object.assign(App, {
             const commentsHtml = comments.map(comment => `
                 <div class="comment-item">
                     <div class="comment-header">
-                        <span class="comment-author">${comment.userId}</span>
+                        <span class="comment-author">${App.escapeHtml(comment.userId)}</span>
                         <span class="comment-date">${new Date(comment.created_at).toLocaleDateString()}</span>
                     </div>
-                    <p class="comment-text">${comment.text}</p>
+                    <p class="comment-text">${App.escapeHtml(comment.text)}</p>
                 </div>
             `).join('');
 

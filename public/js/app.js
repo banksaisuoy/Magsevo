@@ -3,6 +3,17 @@
 
 // Global application state
 const App = {
+    // HTML Escape utility
+    escapeHtml(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
     // State management
     state: {
         currentUser: null,
@@ -10,6 +21,7 @@ const App = {
         currentVideoId: null,
         isAdminPanelOpen: false,
         currentAdminTab: 'users',
+        currentSort: 'newest',
         siteSettings: {
             siteName: 'VisionHub',
             primaryColor: '#2a9d8f'
@@ -239,7 +251,7 @@ const App = {
             console.log('Videos response:', response);
 
             if (response.success) {
-                this.state.allVideos = response.videos;
+                this.state.allVideos = response.videos || [];
                 console.log('All videos loaded:', this.state.allVideos.length);
 
                 this.state.allVideos.forEach((video, index) => {
@@ -489,8 +501,28 @@ const App = {
         this.renderMainApp();
         const contentDiv = document.getElementById('content');
 
-        const videosToRender = filteredVideos || this.state.allVideos;
+        let videosToRender = [...(filteredVideos || this.state.allVideos)];
         const hasFeatured = this.state.featuredVideos && this.state.featuredVideos.length > 0 && !filteredVideos;
+
+        // Apply sorting
+        videosToRender.sort((a, b) => {
+            switch(this.state.currentSort) {
+                case 'newest':
+                    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                case 'oldest':
+                    return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+                case 'views-most':
+                    return (b.views || 0) - (a.views || 0);
+                case 'views-least':
+                    return (a.views || 0) - (b.views || 0);
+                case 'name-asc':
+                    return (a.title || '').localeCompare(b.title || '');
+                case 'name-desc':
+                    return (b.title || '').localeCompare(a.title || '');
+                default:
+                    return 0;
+            }
+        });
 
         console.log('Rendering home page, featured videos count:',
             this.state.featuredVideos ? this.state.featuredVideos.length : 0,
@@ -533,9 +565,9 @@ const App = {
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             ${trendingVideos.map(video => `
                                 <div class="video-card" data-video-id="${video.id}">
-                                    <img src="${video.thumbnailUrl}" alt="${video.title}" class="video-card-img">
+                                    <img src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
                                     <div class="video-card-content">
-                                        <h3 class="video-card-title">${video.title}</h3>
+                                        <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                         <p class="video-card-meta">${video.views} views</p>
                                     </div>
                                 </div>
@@ -554,13 +586,26 @@ const App = {
                 ` : ''}
 
                 <section>
-                    <h2 class="text-2xl font-bold mb-4">${filteredVideos ? 'Search Results' : 'All Videos'}</h2>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+                        <h2 class="text-2xl font-bold">${filteredVideos ? 'Search Results' : 'All Videos'}</h2>
+                        <div class="flex items-center gap-2">
+                            <label for="video-sort" class="text-sm text-secondary font-medium whitespace-nowrap">Sort by:</label>
+                            <select id="video-sort" class="form-select text-sm py-1 pl-3 pr-8 bg-[var(--surface-dark)] border-[var(--border-color)]">
+                                <option value="newest" ${this.state.currentSort === 'newest' ? 'selected' : ''}>Newest First</option>
+                                <option value="oldest" ${this.state.currentSort === 'oldest' ? 'selected' : ''}>Oldest First</option>
+                                <option value="views-most" ${this.state.currentSort === 'views-most' ? 'selected' : ''}>Most Views</option>
+                                <option value="views-least" ${this.state.currentSort === 'views-least' ? 'selected' : ''}>Least Views</option>
+                                <option value="name-asc" ${this.state.currentSort === 'name-asc' ? 'selected' : ''}>Name (A-Z)</option>
+                                <option value="name-desc" ${this.state.currentSort === 'name-desc' ? 'selected' : ''}>Name (Z-A)</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                         ${videosToRender.length > 0 ? videosToRender.map(video => `
                             <div class="video-card" data-video-id="${video.id}">
-                                <img src="${video.thumbnailUrl}" alt="${video.title}" class="video-card-img">
+                                <img src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
                                 <div class="video-card-content">
-                                    <h3 class="video-card-title">${video.title}</h3>
+                                    <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                     <p class="video-card-meta">Category: ${video.categoryName}</p>
                                 </div>
                             </div>
@@ -622,6 +667,14 @@ const App = {
                 this.renderHomePage(categoryVideos);
             });
         });
+
+        const sortSelect = document.getElementById('video-sort');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+                this.state.currentSort = e.target.value;
+                this.renderHomePage(filteredVideos);
+            });
+        }
     }
 };
 
@@ -686,7 +739,7 @@ Object.assign(App, {
                             </div>
                             <div class="p-6">
                                 <div class="flex items-start justify-between mb-4">
-                                    <h1 class="text-3xl font-bold">${video.title}</h1>
+                                    <h1 class="text-3xl font-bold">${this.escapeHtml(video.title)}</h1>
                                     <div class="flex space-x-2">
                                         <button id="favorite-btn" class="btn ${isFavorited ? 'btn-danger' : 'btn-secondary'} flex items-center gap-2" data-id="${video.id}">
                                             <i class="${isFavorited ? 'fas' : 'far'} fa-heart"></i> ${isFavorited ? 'Favorited' : 'Favorite'}
@@ -701,7 +754,7 @@ Object.assign(App, {
                                     <span class="flex items-center gap-1"><i class="fas fa-eye"></i> ${video.views.toLocaleString()} views</span>
                                 </div>
                                 <div class="text-gray-300 leading-relaxed mb-4">
-                                    ${video.description || 'No description available for this video.'}
+                                    ${this.escapeHtml(video.description) || 'No description available for this video.'}
                                 </div>
                             </div>
                         </div>
@@ -730,11 +783,11 @@ Object.assign(App, {
                                 ${relatedVideos.length > 0 ? relatedVideos.map(video => `
                                     <div class="flex items-start space-x-3 p-2 -mx-2 rounded-lg cursor-pointer hover:bg-[var(--surface-light)] transition-colors group" data-video-id="${video.id}">
                                         <div class="relative w-32 shrink-0 rounded-lg overflow-hidden">
-                                            <img class="w-full h-20 object-cover group-hover:scale-105 transition-transform" src="${video.thumbnailUrl}" alt="${video.title}">
+                                            <img class="w-full h-20 object-cover group-hover:scale-105 transition-transform" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}">
                                             <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <h4 class="font-semibold text-sm line-clamp-2 leading-snug group-hover:text-primary transition-colors">${video.title}</h4>
+                                            <h4 class="font-semibold text-sm line-clamp-2 leading-snug group-hover:text-primary transition-colors">${this.escapeHtml(video.title)}</h4>
                                             <p class="text-xs text-secondary mt-1">${video.categoryName}</p>
                                             <p class="text-xs text-secondary mt-1">${video.views} views</p>
                                         </div>
@@ -793,9 +846,9 @@ Object.assign(App, {
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             ${favorites.length > 0 ? favorites.map(video => `
                                 <div class="video-card" data-video-id="${video.id}">
-                                    <img src="${video.thumbnailUrl}" alt="${video.title}" class="video-card-img">
+                                    <img src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
                                     <div class="video-card-content">
-                                        <h3 class="video-card-title">${video.title}</h3>
+                                        <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                         <p class="video-card-meta">Category: ${video.categoryName}</p>
                                     </div>
                                 </div>

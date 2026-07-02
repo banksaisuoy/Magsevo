@@ -48,3 +48,22 @@ describe('UI/UX Refinements Check', () => {
         expect(appJsContent).toContain('Admin Dashboard');
     });
 });
+
+describe('Frontend XSS Prevention', () => {
+    let appJsContent;
+    let appAdminJsContent;
+
+    beforeAll(() => {
+        appJsContent = fs.readFileSync(path.join(__dirname, '../public/js/app.js'), 'utf8');
+        appAdminJsContent = fs.readFileSync(path.join(__dirname, '../public/js/app-admin.js'), 'utf8');
+    });
+
+    test('escapeHtml utility exists and is used in app.js', () => {
+        expect(appJsContent).toContain('escapeHtml(');
+        expect(appJsContent).toContain('this.escapeHtml(');
+    });
+
+    test('escapeHtml utility is used in app-admin.js', () => {
+        expect(appAdminJsContent).toContain('App.escapeHtml(');
+    });
+});
