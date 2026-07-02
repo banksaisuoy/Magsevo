@@ -71,7 +71,7 @@ Object.assign(App, {
                             </div>
                             <div class="p-6">
                                 <div class="flex items-start justify-between mb-4">
-                                    <h1 class="text-3xl font-bold">${video.title}</h1>
+                                    <h1 class="text-3xl font-bold">${App.escapeHtml(video.title)}</h1>
                                     <div class="flex space-x-2">
                                         <button id="favorite-btn" class="btn-icon ${isFavorited ? 'btn-danger' : 'btn-secondary'}" data-id="${video.id}">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
@@ -110,9 +110,9 @@ Object.assign(App, {
                             <div class="space-y-4">
                                 ${relatedVideos.length > 0 ? relatedVideos.map(video => `
                                     <div class="flex items-center space-x-4 p-2 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors" data-video-id="${video.id}">
-                                        <img class="w-24 h-auto rounded-lg" src="${video.thumbnailUrl}" alt="${video.title}">
+                                        <img class="w-24 h-auto rounded-lg" src="${video.thumbnailUrl}" alt="${App.escapeHtml(video.title)}">
                                         <div class="flex-1">
-                                            <h4 class="font-semibold text-sm">${video.title}</h4>
+                                            <h4 class="font-semibold text-sm">${App.escapeHtml(video.title)}</h4>
                                             <p class="text-xs text-secondary">${video.categoryName}</p>
                                         </div>
                                     </div>
@@ -174,9 +174,9 @@ Object.assign(App, {
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             ${favorites.length > 0 ? favorites.map(video => `
                                 <div class="video-card" data-video-id="${video.id}">
-                                    <img src="${video.thumbnailUrl}" alt="${video.title}" class="video-card-img">
+                                    <img src="${video.thumbnailUrl}" alt="${App.escapeHtml(video.title)}" class="video-card-img">
                                     <div class="video-card-content">
-                                        <h3 class="video-card-title">${video.title}</h3>
+                                        <h3 class="video-card-title">${App.escapeHtml(video.title)}</h3>
                                         <p class="video-card-meta">Category: ${video.categoryName}</p>
                                     </div>
                                 </div>

@@ -158,7 +158,12 @@ const App = {
                     return { success: true, videos: App.mockData.videos };
                 }
 
+                if (endpoint.startsWith('/videos/search')) {
+                    return { success: true, videos: App.mockData.videos };
+                }
+
                 if (endpoint.startsWith('/videos/')) {
+                    if (endpoint.endsWith('/view')) return { success: true };
                     const videoId = parseInt(endpoint.split('/').pop());
                     const video = App.mockData.videos.find(v => v.id === videoId);
                     if (video) return { success: true, video };
@@ -186,9 +191,27 @@ const App = {
                     return { success: true, comments };
                 }
 
+
                 if (endpoint === '/settings') {
                     return { success: true, settings: { siteName: 'VisionHub', primaryColor: '#2a9d8f' } };
                 }
+
+                if (endpoint === '/auth/logout') {
+                    return { success: true };
+                }
+
+                if (endpoint === '/comments') {
+                    return { success: true };
+                }
+
+                if (endpoint === '/reports') {
+                    return { success: true };
+                }
+
+                if (endpoint === '/report-reasons') {
+                    return { success: true, reasons: [{reason: 'Inappropriate content'}, {reason: 'Spam'}, {reason: 'Copyright violation'}, {reason: 'Misleading content'}, {reason: 'Violence or harmful content'}, {reason: 'Hate speech'}, {reason: 'Other'}] };
+                }
+
 
                 // Default fallback for unhandled endpoints
                 return { success: true };
@@ -468,14 +491,14 @@ const App = {
         if (featuredSection && featuredVideo) {
             const newHtml = `
                 <div class="hero-section cursor-pointer group" data-video-id="${featuredVideo.id}">
-                    <img src="${featuredVideo.thumbnailUrl}" alt="${featuredVideo.title}" class="hero-bg group-hover:scale-105 transition-transform duration-700">
+                    <img src="${featuredVideo.thumbnailUrl}" alt="${this.escapeHtml(featuredVideo.title)}" class="hero-bg group-hover:scale-105 transition-transform duration-700">
                     <div class="hero-overlay"></div>
                     <div class="hero-content">
                         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/50 text-[var(--primary-color)] text-sm font-semibold mb-4 backdrop-blur-sm" style="color: var(--primary-color); border-color: var(--primary-color); background-color: rgba(42, 157, 143, 0.2);">
                             <i class="fas fa-star"></i> Featured
                         </div>
-                        <h2 class="hero-title">${featuredVideo.title}</h2>
-                        <p class="hero-description">${featuredVideo.description}</p>
+                        <h2 class="hero-title">${this.escapeHtml(featuredVideo.title)}</h2>
+                        <p class="hero-description">${this.escapeHtml(featuredVideo.description)}</p>
                         <div class="flex items-center gap-4 mt-6">
                             <button class="btn btn-primary btn-lg" style="box-shadow: 0 0 20px rgba(42, 157, 143, 0.4);">
                                 <i class="fas fa-play mr-2"></i> Watch Now
@@ -544,7 +567,7 @@ const App = {
 
         const categoriesHtml = categories.map(cat => `
             <div class="card cursor-pointer" data-category-id="${cat.id}">
-                <h3 class="text-xl font-bold text-primary">${cat.name}</h3>
+                <h3 class="text-xl font-bold text-primary">${this.escapeHtml(cat.name)}</h3>
                 <p class="text-sm text-secondary mt-2">
                     ${videosToRender.filter(v => v.categoryId === cat.id).length} videos
                 </p>
@@ -1296,10 +1319,10 @@ Object.assign(App, {
             const commentsHtml = comments.map(comment => `
                 <div class="comment-item">
                     <div class="comment-header">
-                        <span class="comment-author">${comment.userId}</span>
+                        <span class="comment-author">${this.escapeHtml(comment.userId)}</span>
                         <span class="comment-date">${new Date(comment.created_at).toLocaleDateString()}</span>
                     </div>
-                    <p class="comment-text">${comment.text}</p>
+                    <p class="comment-text">${this.escapeHtml(comment.text)}</p>
                 </div>
             `).join('');
 
