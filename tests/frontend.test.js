@@ -67,3 +67,29 @@ describe('Frontend XSS Prevention', () => {
         expect(appAdminJsContent).toContain('App.escapeHtml(');
     });
 });
+
+describe('App.escapeHtml behavior check', () => {
+    let escapeHtml;
+    beforeAll(() => {
+        const fs = require('fs');
+        const path = require('path');
+        const appJsContent = fs.readFileSync(path.join(__dirname, '../public/js/app.js'), 'utf8');
+
+        const funcStr = appJsContent.substring(appJsContent.indexOf('escapeHtml('), appJsContent.indexOf('state:'));
+        const body = funcStr.substring(funcStr.indexOf('{') + 1, funcStr.lastIndexOf('}')).trim();
+        escapeHtml = new Function('str', body);
+    });
+
+    test('It escapes basic script tags', () => {
+        expect(escapeHtml('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
+    });
+
+    test('It escapes quotes and ampersands', () => {
+        expect(escapeHtml('"test" & \'test\'')).toBe('&quot;test&quot; &amp; &#39;test&#39;');
+    });
+
+    test('It handles null or undefined properly', () => {
+        expect(escapeHtml(null)).toBe('');
+        expect(escapeHtml(undefined)).toBe('');
+    });
+});
