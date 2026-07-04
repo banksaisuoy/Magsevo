@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, PasswordPolicy, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -48,7 +39,7 @@ function requireAdmin(req, res, next) {
 // Get active password policy
 router.get('/active', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const policy = await PasswordPolicy.getActive(db);
         res.json({ success: true, policy });
     } catch (error) {
@@ -60,7 +51,7 @@ router.get('/active', async (req, res) => {
 // Get all password policies
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const policies = await PasswordPolicy.getAll(db);
         res.json({ success: true, policies });
     } catch (error) {
@@ -72,7 +63,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 // Create new password policy
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const {
             name,
             min_length,
@@ -125,7 +116,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 // Validate password against active policy
 router.post('/validate', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { password } = req.body;
 
         if (!password) {

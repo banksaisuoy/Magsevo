@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, Comment, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -44,7 +35,7 @@ function requireAdmin(req, res, next) {
 // Get comments for a video
 router.get('/video/:videoId', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { videoId } = req.params;
 
         // Check if video exists
@@ -64,7 +55,7 @@ router.get('/video/:videoId', async (req, res) => {
 // Create a new comment
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { videoId, text } = req.body;
 
         if (!videoId || !text || text.trim().length === 0) {
@@ -99,7 +90,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // Delete a comment (admin only or comment owner)
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         // Get comment to check ownership

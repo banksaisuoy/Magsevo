@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, ReportReason, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -44,7 +35,7 @@ function requireAdmin(req, res, next) {
 // Get all report reasons (public - for forms)
 router.get('/', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const reasons = await ReportReason.getAll(db);
         res.json({ success: true, reasons });
     } catch (error) {
@@ -56,7 +47,7 @@ router.get('/', async (req, res) => {
 // Get single report reason by ID (admin only)
 router.get('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const reason = await ReportReason.getById(db, id);
 
@@ -74,7 +65,7 @@ router.get('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // Create new report reason (admin only)
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { reason } = req.body;
 
         if (!reason || reason.trim().length === 0) {
@@ -101,7 +92,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 // Update report reason (admin only)
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const { reason } = req.body;
 
@@ -131,7 +122,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // Delete report reason (admin only)
 router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         // Check if reason exists

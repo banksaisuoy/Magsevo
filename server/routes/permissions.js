@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, Permission, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -48,7 +39,7 @@ function requireAdmin(req, res, next) {
 // Get all permissions
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const permissions = await Permission.getAll(db);
 
         // Group by category
@@ -70,7 +61,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 // Get permissions by category
 router.get('/category/:category', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { category } = req.params;
         const permissions = await Permission.getByCategory(db, category);
         res.json({ success: true, permissions });
@@ -83,7 +74,7 @@ router.get('/category/:category', authenticateToken, requireAdmin, async (req, r
 // Get user permissions
 router.get('/user/:username', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { username } = req.params;
 
         // Users can only view their own permissions, admins can view any
@@ -112,7 +103,7 @@ router.get('/user/:username', authenticateToken, async (req, res) => {
 // Grant permission to user
 router.post('/user/:username/:permissionId', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { username, permissionId } = req.params;
 
         // Check if user exists
@@ -135,7 +126,7 @@ router.post('/user/:username/:permissionId', authenticateToken, requireAdmin, as
 // Revoke permission from user
 router.delete('/user/:username/:permissionId', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { username, permissionId } = req.params;
 
         await Permission.revokeUserPermission(db, username, permissionId);
@@ -151,7 +142,7 @@ router.delete('/user/:username/:permissionId', authenticateToken, requireAdmin, 
 // Grant permission to group
 router.post('/group/:groupId/:permissionId', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { groupId, permissionId } = req.params;
 
         // Check if group exists
@@ -174,7 +165,7 @@ router.post('/group/:groupId/:permissionId', authenticateToken, requireAdmin, as
 // Revoke permission from group
 router.delete('/group/:groupId/:permissionId', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { groupId, permissionId } = req.params;
 
         const UserGroup = require('../models/index').UserGroup;

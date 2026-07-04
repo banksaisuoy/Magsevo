@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -44,7 +35,7 @@ function requireAdmin(req, res, next) {
 // Get activity logs (admin only)
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const limit = parseInt(req.query.limit) || 100;
         const logs = await Log.getRecent(db, limit);
         res.json({ success: true, logs });
@@ -57,7 +48,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 // Create a log entry (for manual logging if needed)
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { action, details } = req.body;
 
         if (!action || action.trim().length === 0) {

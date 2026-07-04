@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, Report, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -44,7 +35,7 @@ function requireAdmin(req, res, next) {
 // Get all reports (admin only)
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const reports = await Report.getAll(db);
         res.json({ success: true, reports });
     } catch (error) {
@@ -56,7 +47,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 // Create a new report
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { videoId, reason, customReason } = req.body;
 
         if (!videoId || !reason || reason.trim().length === 0) {
@@ -103,7 +94,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // Resolve/delete a report (admin only)
 router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         // Check if report exists

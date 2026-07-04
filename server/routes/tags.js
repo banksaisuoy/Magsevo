@@ -2,16 +2,7 @@ const express = require('express');
 const { Database } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -44,7 +35,7 @@ function requireAdmin(req, res, next) {
 // Get all tags
 router.get('/', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const tags = await db.all('SELECT * FROM tags ORDER BY name');
         res.json({ success: true, tags });
     } catch (error) {
@@ -56,7 +47,7 @@ router.get('/', async (req, res) => {
 // Get tags for a specific video
 router.get('/video/:videoId', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { videoId } = req.params;
 
         const tags = await db.all(`
@@ -76,7 +67,7 @@ router.get('/video/:videoId', async (req, res) => {
 // Create new tag (admin only)
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { name, description, color } = req.body;
 
         if (!name) {
@@ -108,7 +99,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 // Update tag (admin only)
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const { name, description, color } = req.body;
 
@@ -143,7 +134,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // Delete tag (admin only)
 router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         // Check if tag exists
@@ -168,7 +159,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // Add tag to video
 router.post('/video/:videoId', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { videoId } = req.params;
         const { tagId } = req.body;
 
@@ -204,7 +195,7 @@ router.post('/video/:videoId', authenticateToken, async (req, res) => {
 // Remove tag from video
 router.delete('/video/:videoId/:tagId', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { videoId, tagId } = req.params;
 
         await db.run(
@@ -222,7 +213,7 @@ router.delete('/video/:videoId/:tagId', authenticateToken, async (req, res) => {
 // Search videos by tags
 router.get('/search', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { tags } = req.query; // Comma-separated tag names or IDs
 
         if (!tags) {

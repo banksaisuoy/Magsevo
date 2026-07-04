@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, UserGroup, Permission, PasswordPolicy, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -45,7 +36,7 @@ function requireAdmin(req, res, next) {
 function checkPermission(permission) {
     return async (req, res, next) => {
         try {
-            const db = await initDatabase();
+            const db = req.app.get('db');
             const userPermissions = await Permission.getUserPermissions(db, req.user.username);
 
             const hasPermission = userPermissions.some(p => p.name === permission) || req.user.role === 'admin';
@@ -69,7 +60,7 @@ function checkPermission(permission) {
 // Get all groups
 router.get('/', authenticateToken, checkPermission('group.view'), async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const groups = await UserGroup.getAll(db);
         res.json({ success: true, groups });
     } catch (error) {
@@ -81,7 +72,7 @@ router.get('/', authenticateToken, checkPermission('group.view'), async (req, re
 // Get single group by ID
 router.get('/:id', authenticateToken, checkPermission('group.view'), async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         const group = await UserGroup.getById(db, id);
@@ -104,7 +95,7 @@ router.get('/:id', authenticateToken, checkPermission('group.view'), async (req,
 // Create new group
 router.post('/', authenticateToken, checkPermission('group.create'), async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { name, description, color } = req.body;
 
         if (!name || name.trim().length === 0) {
@@ -138,7 +129,7 @@ router.post('/', authenticateToken, checkPermission('group.create'), async (req,
 // Update group
 router.put('/:id', authenticateToken, checkPermission('group.edit'), async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const { name, description, color } = req.body;
 
@@ -174,7 +165,7 @@ router.put('/:id', authenticateToken, checkPermission('group.edit'), async (req,
 // Delete group
 router.delete('/:id', authenticateToken, checkPermission('group.delete'), async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         // Check if group exists
@@ -196,7 +187,7 @@ router.delete('/:id', authenticateToken, checkPermission('group.delete'), async 
 // Add member to group
 router.post('/:id/members', authenticateToken, checkPermission('group.manage_members'), async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const { username, role } = req.body;
 
@@ -230,7 +221,7 @@ router.post('/:id/members', authenticateToken, checkPermission('group.manage_mem
 // Remove member from group
 router.delete('/:id/members/:username', authenticateToken, checkPermission('group.manage_members'), async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id, username } = req.params;
 
         // Check if group exists
@@ -252,7 +243,7 @@ router.delete('/:id/members/:username', authenticateToken, checkPermission('grou
 // Get user's groups
 router.get('/user/:username', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { username } = req.params;
 
         // Users can only view their own groups, admins can view any

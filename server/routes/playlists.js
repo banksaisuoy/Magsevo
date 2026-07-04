@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, Playlist } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -36,7 +27,7 @@ function authenticateToken(req, res, next) {
 // Get user's playlists
 router.get('/user/:userId', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { userId } = req.params;
 
         // Users can only access their own playlists unless admin
@@ -55,7 +46,7 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
 // Get current user's playlists
 router.get('/my', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const playlists = await Playlist.getUserPlaylists(db, req.user.username);
         res.json({ success: true, playlists });
     } catch (error) {
@@ -67,7 +58,7 @@ router.get('/my', authenticateToken, async (req, res) => {
 // Get playlist by ID
 router.get('/:id', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         const playlist = await Playlist.getById(db, id);
@@ -90,7 +81,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Get playlist videos
 router.get('/:id/videos', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         const playlist = await Playlist.getById(db, id);
@@ -114,7 +105,7 @@ router.get('/:id/videos', authenticateToken, async (req, res) => {
 // Create new playlist
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { name, description, is_public } = req.body;
 
         if (!name) {
@@ -144,7 +135,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // Update playlist
 router.put('/:id', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const { name, description, is_public } = req.body;
 
@@ -180,7 +171,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 // Delete playlist
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         const playlist = await Playlist.getById(db, id);
@@ -205,7 +196,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 // Add video to playlist
 router.post('/:id/videos', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const { videoId, position } = req.body;
 
@@ -241,7 +232,7 @@ router.post('/:id/videos', authenticateToken, async (req, res) => {
 // Remove video from playlist
 router.delete('/:id/videos/:videoId', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id, videoId } = req.params;
 
         const playlist = await Playlist.getById(db, id);
@@ -266,7 +257,7 @@ router.delete('/:id/videos/:videoId', authenticateToken, async (req, res) => {
 // Reorder videos in playlist
 router.put('/:id/videos/reorder', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const { videoOrders } = req.body; // Array of {videoId, position}
 

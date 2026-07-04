@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, ContentSchedule, Video } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -44,7 +35,7 @@ function requireAdmin(req, res, next) {
 // Get all scheduled content (admin only)
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { status } = req.query;
 
         let schedules;
@@ -64,7 +55,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 // Create new scheduled content
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { videoId, publish_at, action_type, description } = req.body;
 
         if (!videoId || !publish_at) {
@@ -113,7 +104,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 // Update scheduled content
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const { publish_at, action_type, description, status } = req.body;
 
@@ -162,7 +153,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // Execute scheduled content manually
 router.post('/:id/execute', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         // Get the schedule
@@ -220,7 +211,7 @@ router.post('/:id/execute', authenticateToken, requireAdmin, async (req, res) =>
 // Cancel scheduled content
 router.post('/:id/cancel', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         // Check if schedule exists and is pending
@@ -245,7 +236,7 @@ router.post('/:id/cancel', authenticateToken, requireAdmin, async (req, res) => 
 // Get pending schedules ready for execution
 router.get('/pending', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const pendingSchedules = await ContentSchedule.getPending(db);
 
         res.json({ success: true, schedules: pendingSchedules });
@@ -258,7 +249,7 @@ router.get('/pending', authenticateToken, requireAdmin, async (req, res) => {
 // Batch execute pending schedules (for automated scheduler)
 router.post('/execute-pending', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const pendingSchedules = await ContentSchedule.getPending(db);
 
         const results = [];
