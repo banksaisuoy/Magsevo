@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, User, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -44,7 +35,7 @@ function requireAdmin(req, res, next) {
 // Get all users (admin only)
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const users = await User.getAll(db);
         res.json({ success: true, users });
     } catch (error) {
@@ -56,7 +47,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 // Get single user by username (admin only or own profile)
 router.get('/:username', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { username } = req.params;
 
         // Users can only access their own profile, admins can access any
@@ -81,7 +72,7 @@ router.get('/:username', authenticateToken, async (req, res) => {
 // Create new user (admin only)
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { username, password, role } = req.body;
 
         if (!username || !password) {
@@ -119,7 +110,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 // Update user (admin only or own profile)
 router.put('/:username', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { username } = req.params;
         const { password, role, fullName, department, employeeId, email, phone } = req.body;
 
@@ -173,7 +164,7 @@ router.put('/:username', authenticateToken, async (req, res) => {
 // Change user role (admin only)
 router.patch('/:username/role', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { username } = req.params;
         const { role } = req.body;
 
@@ -200,7 +191,7 @@ router.patch('/:username/role', authenticateToken, requireAdmin, async (req, res
 // Update user profile/password (admin only or own profile) - PATCH method
 router.patch('/:username', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { username } = req.params;
         const { password, fullName, department, employeeId, email, phone } = req.body;
 

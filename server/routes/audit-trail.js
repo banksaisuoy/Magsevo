@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, AuditTrail } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -44,7 +35,7 @@ function requireAdmin(req, res, next) {
 // Get all audit trails (admin only)
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { limit } = req.query;
 
         const auditLimit = parseInt(limit) || 100;
@@ -60,7 +51,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 // Get audit trails for specific user
 router.get('/user/:userId', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { userId } = req.params;
         const { limit } = req.query;
 
@@ -82,7 +73,7 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
 // Get audit trails for specific resource
 router.get('/resource/:resourceType/:resourceId', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { resourceType, resourceId } = req.params;
         const { limit } = req.query;
 
@@ -99,7 +90,7 @@ router.get('/resource/:resourceType/:resourceId', authenticateToken, requireAdmi
 // Search audit trails (admin only)
 router.get('/search', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const {
             userId,
             action,
@@ -133,7 +124,7 @@ router.get('/search', authenticateToken, requireAdmin, async (req, res) => {
 // Create audit trail entry
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const {
             action,
             resource_type,
@@ -177,7 +168,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // Get audit trail statistics (admin only)
 router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
 
         // Get total count
         const totalResult = await db.get('SELECT COUNT(*) as total FROM audit_trail');
@@ -234,7 +225,7 @@ router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
 // Get audit trail export (admin only)
 router.get('/export', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const {
             format = 'json',
             dateFrom,

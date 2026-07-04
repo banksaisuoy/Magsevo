@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, Category, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -44,7 +35,7 @@ function requireAdmin(req, res, next) {
 // Get all categories
 router.get('/', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const categories = await Category.getAll(db);
         res.json({ success: true, categories });
     } catch (error) {
@@ -56,7 +47,7 @@ router.get('/', async (req, res) => {
 // Get single category by ID
 router.get('/:id', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const category = await Category.getById(db, id);
 
@@ -74,7 +65,7 @@ router.get('/:id', async (req, res) => {
 // Create new category (admin only)
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { name } = req.body;
 
         if (!name || name.trim().length === 0) {
@@ -101,7 +92,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 // Update category (admin only)
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const { name } = req.body;
 
@@ -131,7 +122,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // Delete category (admin only)
 router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         // Check if category exists

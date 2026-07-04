@@ -5,16 +5,7 @@ const fs = require('fs');
 const { Database, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -107,7 +98,7 @@ router.post('/video', authenticateToken, requireAdmin, upload.fields([
     { name: 'thumbnail', maxCount: 1 }
 ]), async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
 
         if (!req.files || (!req.files.video && !req.body.videoUrl)) {
             return res.status(400).json({ error: 'Video file or URL is required' });
@@ -148,7 +139,7 @@ router.post('/video', authenticateToken, requireAdmin, upload.fields([
 // Upload thumbnail only
 router.post('/thumbnail', authenticateToken, requireAdmin, upload.single('thumbnail'), async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
 
         if (!req.file) {
             return res.status(400).json({ error: 'Thumbnail file is required' });
@@ -175,7 +166,7 @@ router.post('/thumbnail', authenticateToken, requireAdmin, upload.single('thumbn
 // Delete uploaded file
 router.delete('/file', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { filePath } = req.body;
 
         if (!filePath) {

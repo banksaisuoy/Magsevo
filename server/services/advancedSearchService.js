@@ -1,12 +1,16 @@
-const { Database, Video, Category, Tag } = require('../models/index');
+const { Video, Category, Tag } = require('../models/index');
 
 class AdvancedSearchService {
     constructor() {
-        this.db = new Database();
+        this.db = null;
+    }
+
+    setDatabase(db) {
+        this.db = db;
     }
 
     async initialize() {
-        await this.db.connect();
+        // Initialization using existing this.db
     }
 
     async searchVideos(query, filters = {}) {
@@ -85,7 +89,7 @@ class AdvancedSearchService {
             console.error('Error searching videos:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -103,7 +107,7 @@ class AdvancedSearchService {
             console.error('Error searching videos by tags:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -145,7 +149,7 @@ class AdvancedSearchService {
             console.error('Error getting search config:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -172,7 +176,7 @@ class AdvancedSearchService {
             console.error('Error saving search config:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -217,7 +221,7 @@ class AdvancedSearchService {
             console.error('Error getting search suggestions:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 }

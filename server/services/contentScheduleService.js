@@ -1,12 +1,16 @@
-const { Database, ContentSchedule } = require('../models/index');
+const { ContentSchedule } = require('../models/index');
 
 class ContentScheduleService {
     constructor() {
-        this.db = new Database();
+        this.db = null;
+    }
+
+    setDatabase(db) {
+        this.db = db;
     }
 
     async initialize() {
-        await this.db.connect();
+        // Initialization using existing this.db
     }
 
     async createSchedule(scheduleData) {
@@ -18,7 +22,7 @@ class ContentScheduleService {
             console.error('Error creating schedule:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -31,7 +35,7 @@ class ContentScheduleService {
             console.error('Error getting schedules:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -44,7 +48,7 @@ class ContentScheduleService {
             console.error('Error getting schedule:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -57,7 +61,7 @@ class ContentScheduleService {
             console.error('Error updating schedule:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -70,7 +74,7 @@ class ContentScheduleService {
             console.error('Error executing schedule:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -83,7 +87,7 @@ class ContentScheduleService {
             console.error('Error canceling schedule:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -96,7 +100,7 @@ class ContentScheduleService {
             console.error('Error getting pending schedules:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 }

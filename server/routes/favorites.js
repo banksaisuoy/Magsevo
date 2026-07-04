@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, Favorite, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -36,7 +27,7 @@ function authenticateToken(req, res, next) {
 // Get user's favorite videos
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const favorites = await Favorite.getUserFavorites(db, req.user.username);
         res.json({ success: true, favorites });
     } catch (error) {
@@ -48,7 +39,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // Check if video is favorited by user
 router.get('/:videoId', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { videoId } = req.params;
         const isFavorited = await Favorite.isFavorited(db, req.user.username, videoId);
         res.json({ success: true, isFavorited });
@@ -61,7 +52,7 @@ router.get('/:videoId', authenticateToken, async (req, res) => {
 // Add video to favorites
 router.post('/:videoId', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { videoId } = req.params;
 
         // Check if video exists
@@ -89,7 +80,7 @@ router.post('/:videoId', authenticateToken, async (req, res) => {
 // Remove video from favorites
 router.delete('/:videoId', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { videoId } = req.params;
 
         // Check if favorited

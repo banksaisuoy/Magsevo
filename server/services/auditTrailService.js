@@ -1,12 +1,16 @@
-const { Database, AuditTrail } = require('../models/index');
+const { AuditTrail } = require('../models/index');
 
 class AuditTrailService {
     constructor() {
-        this.db = new Database();
+        this.db = null;
+    }
+
+    setDatabase(db) {
+        this.db = db;
     }
 
     async initialize() {
-        await this.db.connect();
+        // Initialization using existing this.db
     }
 
     async logAction(auditData) {
@@ -18,7 +22,7 @@ class AuditTrailService {
             console.error('Error logging audit action:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -31,7 +35,7 @@ class AuditTrailService {
             console.error('Error getting audit trail:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -44,7 +48,7 @@ class AuditTrailService {
             console.error('Error getting user audit trail:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -57,7 +61,7 @@ class AuditTrailService {
             console.error('Error getting resource audit trail:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -70,7 +74,7 @@ class AuditTrailService {
             console.error('Error searching audit trail:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -109,7 +113,7 @@ class AuditTrailService {
             console.error('Error exporting audit trail:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -122,7 +126,7 @@ class AuditTrailService {
             console.error('Error clearing audit trail:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 }

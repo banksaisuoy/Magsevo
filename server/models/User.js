@@ -59,6 +59,7 @@ class User {
     }
 
     static async validatePassword(plainPassword, hashedPassword) {
+        if (!plainPassword || !hashedPassword) return false;
         return await bcrypt.compare(plainPassword, hashedPassword);
     }
 }

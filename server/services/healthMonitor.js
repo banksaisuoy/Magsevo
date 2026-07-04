@@ -12,11 +12,12 @@ class SystemHealthMonitor {
         this.isMonitoring = false;
     }
 
+
+    setDatabase(db) {
+        this.database = db;
+    }
+
     async initDatabase() {
-        if (!this.database) {
-            this.database = new Database();
-            await this.database.connect();
-        }
         return this.database;
     }
 

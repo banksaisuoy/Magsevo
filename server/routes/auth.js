@@ -4,21 +4,12 @@ const { Database, User, Log } = require('../models/index');
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Login route
 router.post('/login', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { username, password } = req.body;
 
         if (!username || !password) {
@@ -61,7 +52,7 @@ router.post('/login', async (req, res) => {
 // Logout route (mainly for logging purposes)
 router.post('/logout', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
 

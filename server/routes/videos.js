@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, Video, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -44,7 +35,7 @@ function requireAdmin(req, res, next) {
 // Get all videos
 router.get('/', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const videos = await Video.getAll(db);
         res.json({ success: true, videos });
     } catch (error) {
@@ -56,7 +47,7 @@ router.get('/', async (req, res) => {
 // Get featured videos
 router.get('/featured', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const videos = await Video.getFeatured(db);
         res.json({ success: true, videos });
     } catch (error) {
@@ -68,7 +59,7 @@ router.get('/featured', async (req, res) => {
 // Get trending videos
 router.get('/trending', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const limit = parseInt(req.query.limit) || 4;
         const videos = await Video.getTrending(db, limit);
         res.json({ success: true, videos });
@@ -81,7 +72,7 @@ router.get('/trending', async (req, res) => {
 // Search videos
 router.get('/search', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { q: query } = req.query;
 
         if (!query || query.length < 2) {
@@ -99,7 +90,7 @@ router.get('/search', async (req, res) => {
 // Get single video by ID
 router.get('/:id', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const video = await Video.getById(db, id);
 
@@ -117,7 +108,7 @@ router.get('/:id', async (req, res) => {
 // Increment video views
 router.post('/:id/view', authenticateToken, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         // Check if video exists
@@ -139,7 +130,7 @@ router.post('/:id/view', authenticateToken, async (req, res) => {
 // Create new video (admin only)
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { title, description, thumbnailUrl, videoUrl, categoryId, isFeatured } = req.body;
 
         if (!title || !videoUrl || !categoryId) {
@@ -171,7 +162,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 // Update video (admin only)
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
         const { title, description, thumbnailUrl, videoUrl, categoryId, isFeatured } = req.body;
 
@@ -206,7 +197,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // Delete video (admin only)
 router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { id } = req.params;
 
         // Check if video exists

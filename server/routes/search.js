@@ -2,21 +2,12 @@ const express = require('express');
 const { Database, Video, Tag } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Advanced search endpoint
 router.get('/', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const {
             q,           // General search query
             category,    // Category filter
@@ -187,7 +178,7 @@ router.get('/', async (req, res) => {
 // Search suggestions endpoint
 router.get('/suggestions', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { q } = req.query;
 
         if (!q || q.trim().length < 2) {
@@ -239,7 +230,7 @@ router.get('/suggestions', async (req, res) => {
 // Get search filters (available categories, tags, etc.)
 router.get('/filters', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
 
         // Get all categories
         const categories = await db.all(`
@@ -310,7 +301,7 @@ router.get('/filters', async (req, res) => {
 // Popular searches endpoint
 router.get('/popular', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
 
         // Get most viewed videos (popular content)
         const popularVideos = await db.all(`

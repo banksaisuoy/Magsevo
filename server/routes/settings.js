@@ -2,16 +2,7 @@ const express = require('express');
 const { Database, Settings, Log } = require('../models/index');
 const router = express.Router();
 
-let database;
-
-// Initialize database connection
-async function initDatabase() {
-    if (!database) {
-        database = new Database();
-        await database.connect();
-    }
-    return database;
-}
+// Database is accessed via req.app.get('db')
 
 // Authentication middleware
 function authenticateToken(req, res, next) {
@@ -44,7 +35,7 @@ function requireAdmin(req, res, next) {
 // Get all settings
 router.get('/', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const settings = await Settings.getAll(db);
 
         // Convert to key-value object
@@ -63,7 +54,7 @@ router.get('/', async (req, res) => {
 // Get specific setting by key
 router.get('/:key', async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { key } = req.params;
         const setting = await Settings.get(db, key);
 
@@ -81,7 +72,7 @@ router.get('/:key', async (req, res) => {
 // Update settings (admin only)
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const settings = req.body;
 
         if (!settings || typeof settings !== 'object') {
@@ -117,7 +108,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 // Update specific setting (admin only)
 router.put('/:key', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const db = await initDatabase();
+        const db = req.app.get('db');
         const { key } = req.params;
         const { value } = req.body;
 

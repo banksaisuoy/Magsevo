@@ -34,7 +34,7 @@ describe('Backend Routes Integration Tests', () => {
         `);
         const bcrypt = require('bcrypt');
         const hashedPassword = await bcrypt.hash('123456', 10);
-        await testDb.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['user', hashedPassword, 'user']);
+        await testDb.run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', ['user', hashedPassword, 'user']);
         await testDb.run('INSERT INTO categories (id, name) VALUES (1, "Test Category")');
         await testDb.run('INSERT INTO videos (id, title, videoUrl, isFeatured, views, categoryId) VALUES (1, "Test Video", "http://test.com", 1, 0, 1)');
 
@@ -44,12 +44,7 @@ describe('Backend Routes Integration Tests', () => {
 
     afterAll(async () => {
         if (testDb) {
-            await new Promise((resolve, reject) => {
-                testDb.close((err) => {
-                    if (err) reject(err);
-                    else resolve();
-                });
-            });
+            await testDb.close();
         }
         // Cleanup test database
         if (fs.existsSync(testDbPath)) {
@@ -91,6 +86,11 @@ describe('Backend Routes Integration Tests', () => {
     });
 
     describe('POST /api/auth/login', () => {
+        beforeAll(async () => {
+            const bcrypt = require('bcrypt');
+            const hashedPassword = await bcrypt.hash('123456', 10);
+            await testDb.run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', ['user', hashedPassword, 'user']);
+        });
         it('should login a user with correct credentials', async () => {
             const res = await request(app)
                 .post('/api/auth/login')

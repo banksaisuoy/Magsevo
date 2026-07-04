@@ -22,7 +22,7 @@ class Database {
                     this.db.run('PRAGMA synchronous = NORMAL');
                     this.db.run('PRAGMA cache_size = 10000');
                     this.db.run('PRAGMA temp_store = MEMORY');
-                    resolve(this.db);
+                    resolve(this);
                 }
             });
         });

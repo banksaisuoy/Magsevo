@@ -1,12 +1,16 @@
-const { Database, Playlist } = require('../models/index');
+const { Playlist } = require('../models/index');
 
 class PlaylistService {
     constructor() {
-        this.db = new Database();
+        this.db = null;
+    }
+
+    setDatabase(db) {
+        this.db = db;
     }
 
     async initialize() {
-        await this.db.connect();
+        // Initialization using existing this.db
     }
 
     async createPlaylist(playlistData) {
@@ -18,7 +22,7 @@ class PlaylistService {
             console.error('Error creating playlist:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -31,7 +35,7 @@ class PlaylistService {
             console.error('Error getting playlist:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -44,7 +48,7 @@ class PlaylistService {
             console.error('Error updating playlist:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -57,7 +61,7 @@ class PlaylistService {
             console.error('Error deleting playlist:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -70,7 +74,7 @@ class PlaylistService {
             console.error('Error getting user playlists:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -83,7 +87,7 @@ class PlaylistService {
             console.error('Error getting playlist videos:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -96,7 +100,7 @@ class PlaylistService {
             console.error('Error adding video to playlist:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 
@@ -109,7 +113,7 @@ class PlaylistService {
             console.error('Error removing video from playlist:', error);
             return { success: false, error: error.message };
         } finally {
-            await this.db.close();
+            // await this.db.close(); // Shared connection
         }
     }
 }
