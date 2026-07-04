@@ -45,7 +45,7 @@ const App = {
     apiBase: '/api',
 
     // Mock Data Fallbacks
-    mockData: {
+        mockData: {
         videos: [
             { id: 101, title: 'Getting Started with UI Design', description: 'Learn the fundamentals of user interface design and create stunning web applications.', thumbnailUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', views: 12500, isFeatured: 1, categoryId: 1, categoryName: 'Design', created_at: new Date().toISOString() },
             { id: 102, title: 'Advanced JavaScript Concepts', description: 'Deep dive into closures, prototypes, and asynchronous programming in modern JavaScript.', thumbnailUrl: 'https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', views: 8900, isFeatured: 1, categoryId: 2, categoryName: 'Development', created_at: new Date().toISOString() },
@@ -62,7 +62,11 @@ const App = {
         comments: [
             { id: 1, videoId: 101, userId: 'user', text: 'This was incredibly helpful! Thank you.', created_at: new Date().toISOString() },
             { id: 2, videoId: 101, userId: 'admin', text: 'Glad you enjoyed it.', created_at: new Date().toISOString() }
-        ]
+        ],
+        logs: [],
+        groups: [],
+        permissions: [],
+        passwordPolicy: {}
     },
 
 
@@ -219,6 +223,13 @@ const App = {
                 if (endpoint === '/report-reasons') {
                     return { success: true, reasons: [{reason: 'Inappropriate content'}, {reason: 'Spam'}, {reason: 'Copyright violation'}, {reason: 'Misleading content'}, {reason: 'Violence or harmful content'}, {reason: 'Hate speech'}, {reason: 'Other'}] };
                 }
+
+                if (endpoint === '/logs') return { success: true, logs: App.mockData.logs || [] };
+                if (endpoint === '/groups') return { success: true, groups: App.mockData.groups || [] };
+                if (endpoint === '/permissions') return { success: true, permissions: App.mockData.permissions || [] };
+                if (endpoint === '/password-policy') return { success: true, policy: App.mockData.passwordPolicy || {} };
+                if (endpoint === '/health') return { success: true, health: { status: 'ok', uptime: 1000 } };
+                if (endpoint === '/api/health') return { success: true, health: { status: 'ok', uptime: 1000 } };
 
 
                 // Default fallback for unhandled endpoints
@@ -380,7 +391,7 @@ const App = {
     renderLoginPage() {
         const loginHtml = `
             <div class="login-container">
-                <div class="login-card">
+                <div class="login-card glass-card relative overflow-hidden p-8 rounded-2xl animate-fadeIn">
                     <h2 class="login-title">Log In</h2>
                     <form id="login-form" class="space-y-4">
                         <div class="form-group">
@@ -595,9 +606,9 @@ const App = {
                         <h2 class="text-2xl font-bold mb-4">Trending Videos</h2>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             ${trendingVideos.map(video => `
-                                <div class="video-card" data-video-id="${video.id}">
-                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
-                                    <div class="video-card-content">
+                                <div class="video-card glass-card hover-scale rounded-xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
+                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover">
+                                    <div class="video-card-content p-4 flex-grow">
                                         <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                         <p class="video-card-meta">${video.views} views</p>
                                     </div>
@@ -633,9 +644,9 @@ const App = {
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                         ${videosToRender.length > 0 ? videosToRender.map(video => `
-                            <div class="video-card" data-video-id="${video.id}">
-                                <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
-                                <div class="video-card-content">
+                            <div class="video-card glass-card hover-scale rounded-xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
+                                <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover">
+                                <div class="video-card-content p-4 flex-grow">
                                     <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                     <p class="video-card-meta">Category: ${video.categoryName}</p>
                                 </div>
@@ -876,9 +887,9 @@ Object.assign(App, {
                         <h2 class="text-2xl font-bold mb-4">My Favorites</h2>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             ${favorites.length > 0 ? favorites.map(video => `
-                                <div class="video-card" data-video-id="${video.id}">
-                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
-                                    <div class="video-card-content">
+                                <div class="video-card glass-card hover-scale rounded-xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
+                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover">
+                                    <div class="video-card-content p-4 flex-grow">
                                         <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                         <p class="video-card-meta">Category: ${video.categoryName}</p>
                                     </div>
