@@ -69,3 +69,4 @@ start.sh
 start.bat
 cleanup.sh
 cleanup.ps1
+coverage/
