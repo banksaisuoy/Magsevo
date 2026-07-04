@@ -110,7 +110,7 @@ Object.assign(App, {
                             <div class="space-y-4">
                                 ${relatedVideos.length > 0 ? relatedVideos.map(video => `
                                     <div class="flex items-center space-x-4 p-2 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors" data-video-id="${video.id}">
-                                        <img class="w-24 h-auto rounded-lg" src="${video.thumbnailUrl}" alt="${App.escapeHtml(video.title)}">
+                                        <img loading="lazy" class="w-24 h-auto rounded-lg" src="${video.thumbnailUrl}" alt="${App.escapeHtml(video.title)}">
                                         <div class="flex-1">
                                             <h4 class="font-semibold text-sm">${App.escapeHtml(video.title)}</h4>
                                             <p class="text-xs text-secondary">${video.categoryName}</p>
@@ -174,7 +174,7 @@ Object.assign(App, {
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             ${favorites.length > 0 ? favorites.map(video => `
                                 <div class="video-card" data-video-id="${video.id}">
-                                    <img src="${video.thumbnailUrl}" alt="${App.escapeHtml(video.title)}" class="video-card-img">
+                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${App.escapeHtml(video.title)}" class="video-card-img">
                                     <div class="video-card-content">
                                         <h3 class="video-card-title">${App.escapeHtml(video.title)}</h3>
                                         <p class="video-card-meta">Category: ${video.categoryName}</p>
@@ -407,21 +407,21 @@ Object.assign(App, {
                 if (!videoId) {
                     throw new Error('Invalid YouTube URL - missing video ID');
                 }
-                return `<iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            return `<iframe loading="lazy" class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
             } else if (url.includes('youtu.be/')) {
                 // Handle YouTube short URLs
                 const videoId = url.split('/').pop().split('?')[0];
                 if (!videoId) {
                     throw new Error('Invalid YouTube short URL');
                 }
-                return `<iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            return `<iframe loading="lazy" class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
             } else if (url.includes('drive.google.com/file/d/')) {
                 // Handle Google Drive URLs
                 const videoId = url.split('/d/')[1].split('/')[0];
                 if (!videoId) {
                     throw new Error('Invalid Google Drive URL');
                 }
-                return `<iframe class="absolute top-0 left-0 w-full h-full" src="https://drive.google.com/file/d/${videoId}/preview" frameborder="0" allowfullscreen></iframe>`;
+            return `<iframe loading="lazy" class="absolute top-0 left-0 w-full h-full" src="https://drive.google.com/file/d/${videoId}/preview" frameborder="0" allowfullscreen></iframe>`;
             } else {
                 // For other URLs, try to use them directly as video sources
                 // Add additional validation for the URL

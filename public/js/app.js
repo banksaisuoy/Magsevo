@@ -201,7 +201,15 @@ const App = {
                 }
 
                 if (endpoint === '/comments') {
-                    return { success: true };
+                    return { success: true, comments: App.mockData.comments || [] };
+                }
+
+                if (endpoint.startsWith('/comments/')) {
+                    return { success: true, comments: App.mockData.comments || [] };
+                }
+
+                if (endpoint === '/tags' || endpoint.startsWith('/tags/')) {
+                    return { success: true, tags: [{id: 1, name: 'Mock Tag', color: '#2563eb'}] };
                 }
 
                 if (endpoint === '/reports') {
@@ -491,7 +499,7 @@ const App = {
         if (featuredSection && featuredVideo) {
             const newHtml = `
                 <div class="hero-section cursor-pointer group" data-video-id="${featuredVideo.id}">
-                    <img src="${featuredVideo.thumbnailUrl}" alt="${this.escapeHtml(featuredVideo.title)}" class="hero-bg group-hover:scale-105 transition-transform duration-700">
+                    <img loading="lazy" src="${featuredVideo.thumbnailUrl}" alt="${this.escapeHtml(featuredVideo.title)}" class="hero-bg group-hover:scale-105 transition-transform duration-700">
                     <div class="hero-overlay"></div>
                     <div class="hero-content">
                         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/50 text-[var(--primary-color)] text-sm font-semibold mb-4 backdrop-blur-sm" style="color: var(--primary-color); border-color: var(--primary-color); background-color: rgba(42, 157, 143, 0.2);">
@@ -588,7 +596,7 @@ const App = {
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             ${trendingVideos.map(video => `
                                 <div class="video-card" data-video-id="${video.id}">
-                                    <img src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
+                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
                                     <div class="video-card-content">
                                         <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                         <p class="video-card-meta">${video.views} views</p>
@@ -626,7 +634,7 @@ const App = {
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                         ${videosToRender.length > 0 ? videosToRender.map(video => `
                             <div class="video-card" data-video-id="${video.id}">
-                                <img src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
+                                <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
                                 <div class="video-card-content">
                                     <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                     <p class="video-card-meta">Category: ${video.categoryName}</p>
@@ -806,7 +814,7 @@ Object.assign(App, {
                                 ${relatedVideos.length > 0 ? relatedVideos.map(video => `
                                     <div class="flex items-start space-x-3 p-2 -mx-2 rounded-lg cursor-pointer hover:bg-[var(--surface-light)] transition-colors group" data-video-id="${video.id}">
                                         <div class="relative w-32 shrink-0 rounded-lg overflow-hidden">
-                                            <img class="w-full h-20 object-cover group-hover:scale-105 transition-transform" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}">
+                                            <img loading="lazy" class="w-full h-20 object-cover group-hover:scale-105 transition-transform" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}">
                                             <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
                                         </div>
                                         <div class="flex-1 min-w-0">
@@ -869,7 +877,7 @@ Object.assign(App, {
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             ${favorites.length > 0 ? favorites.map(video => `
                                 <div class="video-card" data-video-id="${video.id}">
-                                    <img src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
+                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img">
                                     <div class="video-card-content">
                                         <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                         <p class="video-card-meta">Category: ${video.categoryName}</p>
