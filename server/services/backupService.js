@@ -69,8 +69,7 @@ class BackupService {
 
             // For now, we'll create a placeholder file
             // In a real implementation, this would use a zip library to compress the uploads directory
-            const placeholderContent = 'File backup placeholder - would contain compressed uploads directory in production';
-            await fs.writeFile(backupFilePath, placeholderContent);
+            await execPromise(`tar -czf "${backupFilePath}" -C "${path.dirname(this.uploadsPath)}" "${path.basename(this.uploadsPath)}"`);
 
             // Get file stats
             const stats = await fs.stat(backupFilePath);

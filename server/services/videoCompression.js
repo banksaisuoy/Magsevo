@@ -1,3 +1,4 @@
+const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -28,9 +29,19 @@ class VideoCompressionService {
                 throw new Error(`Input file not found: ${inputPath}`);
             }
 
-            // For now, we'll just copy the file as a placeholder
-            // In a real implementation, this would use ffmpeg or similar
-            await fs.copyFile(inputPath, outputPath);
+            // Use fluent-ffmpeg to compress the video
+            await new Promise((resolve, reject) => {
+                ffmpeg(inputPath)
+                    .outputOptions([
+                        '-c:v libx264',
+                        '-crf 28', // Adjust CRF for compression/quality trade-off
+                        '-preset fast'
+                    ])
+                    .output(outputPath)
+                    .on('end', resolve)
+                    .on('error', reject)
+                    .run();
+            });
 
             // Get file stats
             const inputStats = await fs.stat(inputPath);
@@ -198,10 +209,18 @@ class VideoCompressionService {
                 throw new Error(`Video file not found: ${videoPath}`);
             }
 
-            // For now, we'll just create a placeholder thumbnail
-            // In a real implementation, this would use ffmpeg to extract a frame
-            const placeholderContent = 'Thumbnail placeholder - would be generated with ffmpeg in production';
-            await fs.writeFile(thumbnailPath, placeholderContent);
+            // Use fluent-ffmpeg to generate thumbnail
+            await new Promise((resolve, reject) => {
+                ffmpeg(videoPath)
+                    .screenshots({
+                        timestamps: ['10%'],
+                        filename: path.basename(thumbnailPath),
+                        folder: path.dirname(thumbnailPath),
+                        size: '320x240'
+                    })
+                    .on('end', resolve)
+                    .on('error', reject);
+            });
 
             return {
                 success: true,

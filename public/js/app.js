@@ -232,6 +232,15 @@ const App = {
                 if (endpoint === '/api/health') return { success: true, health: { status: 'ok', uptime: 1000 } };
 
 
+
+                if (endpoint === '/health/overview') return { success: true, overview: { overall: 'healthy' } };
+                if (endpoint === '/health/metrics') return { success: true, metrics: {} };
+                if (endpoint === '/health/alerts') return { success: true, alerts: [] };
+                if (endpoint === '/video-compression/status') return { success: true, status: { enabled: true } };
+                if (endpoint === '/ai/status') return { success: true, status: { enabled: true } };
+                if (endpoint === '/backups/status') return { success: true, status: { scheduleEnabled: true } };
+                if (endpoint === '/backups/list') return { success: true, backups: [] };
+
                 // Default fallback for unhandled endpoints
                 return { success: true };
             }
