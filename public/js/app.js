@@ -63,7 +63,18 @@ const App = {
             { id: 1, videoId: 101, userId: 'user', text: 'This was incredibly helpful! Thank you.', created_at: new Date().toISOString() },
             { id: 2, videoId: 101, userId: 'admin', text: 'Glad you enjoyed it.', created_at: new Date().toISOString() }
         ],
-        logs: [],
+        reports: [
+            { id: 1, videoId: 101, reason: 'Spam', description: 'This looks like spam.', reporter: 'user', created_at: new Date().toISOString(), status: 'pending' },
+            { id: 2, videoId: 102, reason: 'Inappropriate', description: 'Not suitable.', reporter: 'user2', created_at: new Date().toISOString(), status: 'resolved' }
+        ],
+        logs: [
+            { id: 1, action: 'LOGIN', userId: 'admin', details: 'Admin logged in', created_at: new Date().toISOString() },
+            { id: 2, action: 'CREATE_VIDEO', userId: 'admin', details: 'Created video 101', created_at: new Date().toISOString() }
+        ],
+        users: [
+            { username: 'admin', role: 'admin', created_at: new Date().toISOString() },
+            { username: 'user', role: 'user', created_at: new Date().toISOString() }
+        ],
         groups: [],
         permissions: [],
         passwordPolicy: {}
@@ -176,6 +187,18 @@ const App = {
 
                 if (endpoint === '/categories') {
                     return { success: true, categories: App.mockData.categories };
+                }
+
+                if (endpoint === '/reports' || endpoint.startsWith('/reports?')) {
+                    return { success: true, reports: App.mockData.reports };
+                }
+
+                if (endpoint === '/logs' || endpoint.startsWith('/logs?')) {
+                    return { success: true, logs: App.mockData.logs };
+                }
+
+                if (endpoint === '/users') {
+                    return { success: true, users: App.mockData.users };
                 }
 
                 if (endpoint === '/favorites') {
@@ -400,7 +423,7 @@ const App = {
     renderLoginPage() {
         const loginHtml = `
             <div class="login-container">
-                <div class="login-card glass-card relative overflow-hidden p-8 rounded-2xl animate-fadeIn">
+                <div class="login-card glass-panel relative overflow-hidden p-8 rounded-2xl animate-fadeIn">
                     <h2 class="login-title">Log In</h2>
                     <form id="login-form" class="space-y-4">
                         <div class="form-group">
@@ -411,7 +434,7 @@ const App = {
                             <label for="password" class="form-label">Password</label>
                             <input type="password" id="password" name="password" class="form-input" required>
                         </div>
-                        <button type="submit" class="btn btn-primary w-full">
+                        <button type="submit" class="magnificent-button w-full">
                             Log In
                         </button>
                         <div id="login-message" class="error-message hidden"></div>
@@ -518,8 +541,8 @@ const App = {
 
         if (featuredSection && featuredVideo) {
             const newHtml = `
-                <div class="hero-section cursor-pointer group" data-video-id="${featuredVideo.id}">
-                    <img loading="lazy" src="${featuredVideo.thumbnailUrl}" alt="${this.escapeHtml(featuredVideo.title)}" class="hero-bg group-hover:scale-105 transition-transform duration-700">
+                <div class="hero-section cursor-pointer group fade-in glass-panel rounded-2xl" data-video-id="${featuredVideo.id}">
+                    <img loading="lazy" src="${featuredVideo.thumbnailUrl}" alt="${this.escapeHtml(featuredVideo.title)}" class="hero-bg group-hover:scale-105 transition-transform duration-700" onerror="this.src='https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'">
                     <div class="hero-overlay"></div>
                     <div class="hero-content">
                         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/50 text-[var(--primary-color)] text-sm font-semibold mb-4 backdrop-blur-sm" style="color: var(--primary-color); border-color: var(--primary-color); background-color: rgba(42, 157, 143, 0.2);">
@@ -528,7 +551,7 @@ const App = {
                         <h2 class="hero-title">${this.escapeHtml(featuredVideo.title)}</h2>
                         <p class="hero-description">${this.escapeHtml(featuredVideo.description)}</p>
                         <div class="flex items-center gap-4 mt-6">
-                            <button class="btn btn-primary btn-lg" style="box-shadow: 0 0 20px rgba(42, 157, 143, 0.4);">
+                            <button class="magnificent-button">
                                 <i class="fas fa-play mr-2"></i> Watch Now
                             </button>
                             <span class="text-gray-300 text-sm flex items-center gap-2">
@@ -613,10 +636,10 @@ const App = {
                 ${trendingVideos.length > 0 && !filteredVideos ? `
                     <section>
                         <h2 class="text-2xl font-bold mb-4">Trending Videos</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             ${trendingVideos.map(video => `
-                                <div class="video-card glass-card hover-scale rounded-xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
-                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover">
+                                <div class="video-card glass-panel scale-up hover-scale rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
+                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'">
                                     <div class="video-card-content p-4 flex-grow">
                                         <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                         <p class="video-card-meta">${video.views} views</p>
@@ -651,10 +674,10 @@ const App = {
                             </select>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         ${videosToRender.length > 0 ? videosToRender.map(video => `
-                            <div class="video-card glass-card hover-scale rounded-xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
-                                <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover">
+                            <div class="video-card glass-panel scale-up hover-scale rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
+                                <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'">
                                 <div class="video-card-content p-4 flex-grow">
                                     <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                     <p class="video-card-meta">Category: ${video.categoryName}</p>
@@ -818,7 +841,7 @@ Object.assign(App, {
                                     <div class="flex-1">
                                         <textarea id="comment-text" class="form-textarea w-full p-4 rounded-xl border border-[var(--border-color)] bg-[var(--surface-dark)] text-white focus:border-primary focus:ring-1 focus:ring-primary transition-all" rows="3" placeholder="Add a comment..." required></textarea>
                                         <div class="flex justify-end mt-2">
-                                            <button type="submit" class="btn btn-primary rounded-full px-6">Comment</button>
+                                            <button type="submit" class="magnificent-button rounded-full px-6">Comment</button>
                                         </div>
                                     </div>
                                 </div>
@@ -834,7 +857,7 @@ Object.assign(App, {
                                 ${relatedVideos.length > 0 ? relatedVideos.map(video => `
                                     <div class="flex items-start space-x-3 p-2 -mx-2 rounded-lg cursor-pointer hover:bg-[var(--surface-light)] transition-colors group" data-video-id="${video.id}">
                                         <div class="relative w-32 shrink-0 rounded-lg overflow-hidden">
-                                            <img loading="lazy" class="w-full h-20 object-cover group-hover:scale-105 transition-transform" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}">
+                                            <img loading="lazy" class="w-full h-20 object-cover group-hover:scale-105 transition-transform" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" onerror="this.src='https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'">
                                             <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
                                         </div>
                                         <div class="flex-1 min-w-0">
@@ -894,10 +917,10 @@ Object.assign(App, {
                 <div class="space-y-8">
                     <section>
                         <h2 class="text-2xl font-bold mb-4">My Favorites</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             ${favorites.length > 0 ? favorites.map(video => `
-                                <div class="video-card glass-card hover-scale rounded-xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
-                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover">
+                                <div class="video-card glass-panel scale-up hover-scale rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
+                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'">
                                     <div class="video-card-content p-4 flex-grow">
                                         <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
                                         <p class="video-card-meta">Category: ${video.categoryName}</p>
