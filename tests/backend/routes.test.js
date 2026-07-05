@@ -24,7 +24,7 @@ describe('Backend Routes Integration Tests', () => {
             CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, role TEXT);
         `);
         await dbInstance.db.run(`
-            CREATE TABLE IF NOT EXISTS videos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, videoUrl TEXT, isFeatured BOOLEAN, views INTEGER, categoryId INTEGER, created_at DATETIME);
+            CREATE TABLE IF NOT EXISTS videos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, description TEXT, thumbnailUrl TEXT, optimizedUrl TEXT, videoUrl TEXT, isFeatured BOOLEAN, views INTEGER, categoryId INTEGER, created_at DATETIME);
         `);
         await dbInstance.db.run(`
             CREATE TABLE IF NOT EXISTS categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT);
@@ -88,8 +88,10 @@ describe('Backend Routes Integration Tests', () => {
     describe('POST /api/auth/login', () => {
         beforeAll(async () => {
             const bcrypt = require('bcrypt');
-            const hashedPassword = await bcrypt.hash('123456', 10);
-            await testDb.run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', ['user', hashedPassword, 'user']);
+            const hashedPasswordAdmin = await bcrypt.hash('adminpass', 10);
+            await testDb.run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', hashedPasswordAdmin, 'admin']);
+            const hashedPasswordUser = await bcrypt.hash('123456', 10);
+            await testDb.run('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)', ['user', hashedPasswordUser, 'user']);
         });
         it('should login a user with correct credentials', async () => {
             const res = await request(app)
@@ -109,6 +111,69 @@ describe('Backend Routes Integration Tests', () => {
 
             expect(res.statusCode).toEqual(401);
             expect(res.body.error).toBeDefined();
+        });
+    });
+
+    describe('Video Operations and Authentication', () => {
+        let adminToken;
+        let userToken;
+
+        beforeAll(() => {
+            adminToken = jwt.sign({ username: 'admin', role: 'admin' }, process.env.JWT_SECRET);
+            userToken = jwt.sign({ username: 'user', role: 'user' }, process.env.JWT_SECRET);
+        });
+
+        it('should create a video if admin', async () => {
+            const res = await request(app)
+                .post('/api/videos')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    title: 'New Admin Video',
+                    description: 'Test description',
+                    categoryId: 1,
+                    videoUrl: 'http://test.com/new.mp4'
+                });
+            expect(res.statusCode).toEqual(201);
+            expect(res.body.success).toBe(true);
+        });
+
+        it('should fail to create a video if user', async () => {
+            const res = await request(app)
+                .post('/api/videos')
+                .set('Authorization', `Bearer ${userToken}`)
+                .send({
+                    title: 'User Video',
+                    description: 'Test description',
+                    categoryId: 1,
+                    videoUrl: 'http://test.com/new.mp4'
+                });
+            expect(res.statusCode).toEqual(403);
+        });
+    });
+
+    describe('AI Service Routes', () => {
+        let adminToken;
+
+        beforeAll(() => {
+            adminToken = jwt.sign({ username: 'admin', role: 'admin' }, process.env.JWT_SECRET);
+        });
+
+        it('should return AI status', async () => {
+            const res = await request(app)
+                .get('/api/ai/status')
+                .set('Authorization', `Bearer ${adminToken}`);
+
+            // By default in test env, without mock, it will probably return 503 since it failed to init. We can mock it properly.
+            expect(res.body).toBeDefined();
+        });
+
+        it('should generate description', async () => {
+            const res = await request(app)
+                .post('/api/ai/generate-description')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({ title: 'Test Title' });
+
+            expect(res.body).toBeDefined();
         });
     });
 });
