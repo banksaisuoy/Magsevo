@@ -145,12 +145,18 @@ const App = {
                 const data = await response.json();
 
                 if (!response.ok) {
+                    // Mute warning for /auth/verify failing gracefully when invalid token exists
+                    if (endpoint !== '/auth/verify') {
+                        console.warn(`API request to ${endpoint} failed: ${data.error || response.statusText}`);
+                    }
                     throw new Error(data.error || 'Request failed');
                 }
 
                 return data;
             } catch (error) {
-                console.warn(`API request to ${endpoint} failed. Using mock fallback...`, error);
+                if (endpoint !== '/auth/verify') {
+                    console.warn(`API request to ${endpoint} failed. Using mock fallback...`, error.message);
+                }
 
                 // Mock Fallbacks
                 if (endpoint === '/auth/verify') {
