@@ -47,11 +47,11 @@ const App = {
     // Mock Data Fallbacks
         mockData: {
         videos: [
-            { id: 101, title: 'Getting Started with UI Design', description: 'Learn the fundamentals of user interface design and create stunning web applications.', thumbnailUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', views: 12500, isFeatured: 1, categoryId: 1, categoryName: 'Design', created_at: new Date().toISOString() },
-            { id: 102, title: 'Advanced JavaScript Concepts', description: 'Deep dive into closures, prototypes, and asynchronous programming in modern JavaScript.', thumbnailUrl: 'https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', views: 8900, isFeatured: 1, categoryId: 2, categoryName: 'Development', created_at: new Date().toISOString() },
-            { id: 103, title: 'Mastering CSS Grid', description: 'A complete guide to building complex layouts with CSS Grid.', thumbnailUrl: 'https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', views: 4200, isFeatured: 0, categoryId: 2, categoryName: 'Development', created_at: new Date().toISOString() },
-            { id: 104, title: 'Photography Basics', description: 'Understanding exposure, composition, and lighting for better photos.', thumbnailUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', views: 15600, isFeatured: 0, categoryId: 3, categoryName: 'Photography', created_at: new Date().toISOString() },
-            { id: 105, title: 'Marketing Strategies for 2024', description: 'How to grow your audience and build a brand online.', thumbnailUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', views: 3200, isFeatured: 0, categoryId: 4, categoryName: 'Business', created_at: new Date().toISOString() }
+            { id: 101, title: 'Getting Started with UI Design', description: 'Learn the fundamentals of user interface design and create stunning web applications.', thumbnailUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', views: 12500, isFeatured: 1, categoryId: 1, categoryName: 'Design', created_at: new Date().toISOString() },
+            { id: 102, title: 'Advanced JavaScript Concepts', description: 'Deep dive into closures, prototypes, and asynchronous programming in modern JavaScript.', thumbnailUrl: 'https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', views: 8900, isFeatured: 1, categoryId: 2, categoryName: 'Development', created_at: new Date().toISOString() },
+            { id: 103, title: 'Mastering CSS Grid', description: 'A complete guide to building complex layouts with CSS Grid.', thumbnailUrl: 'https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', views: 4200, isFeatured: 0, categoryId: 2, categoryName: 'Development', created_at: new Date().toISOString() },
+            { id: 104, title: 'Photography Basics', description: 'Understanding exposure, composition, and lighting for better photos.', thumbnailUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', views: 15600, isFeatured: 0, categoryId: 3, categoryName: 'Photography', created_at: new Date().toISOString() },
+            { id: 105, title: 'Marketing Strategies for 2024', description: 'How to grow your audience and build a brand online.', thumbnailUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop', videoUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', views: 3200, isFeatured: 0, categoryId: 4, categoryName: 'Business', created_at: new Date().toISOString() }
         ],
         categories: [
             { id: 1, name: 'Design' },
@@ -428,25 +428,31 @@ const App = {
     // Render the login page
     renderLoginPage() {
         const loginHtml = `
-            <div class="login-container">
-                <div class="login-card glass-panel relative overflow-hidden p-8 rounded-2xl animate-fadeIn">
-                    <h2 class="login-title">Log In</h2>
-                    <form id="login-form" class="space-y-4">
-                        <div class="form-group">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" id="username" name="username" class="form-input" required>
+            <div class="min-h-screen flex items-center justify-center bg-[#020817] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(42,157,143,0.3),rgba(255,255,255,0))] p-4">
+                <div class="w-full max-w-md bg-[#0f172a]/80 backdrop-blur-xl border border-[#1e293b] p-8 rounded-xl shadow-2xl animate-fade-in-up">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-emerald-400">Welcome Back</h2>
+                        <p class="text-sm text-gray-400 mt-2">Enter your credentials to access your account</p>
+                    </div>
+                    <form id="login-form" class="space-y-5">
+                        <div class="space-y-2">
+                            <label for="username" class="text-sm font-medium text-gray-200">Username</label>
+                            <input type="text" id="username" name="username" class="flex h-10 w-full rounded-md border border-gray-700 bg-gray-900/50 px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all" placeholder="Enter username" required>
                         </div>
-                        <div class="form-group">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" id="password" name="password" class="form-input" required>
+                        <div class="space-y-2">
+                            <label for="password" class="text-sm font-medium text-gray-200">Password</label>
+                            <input type="password" id="password" name="password" class="flex h-10 w-full rounded-md border border-gray-700 bg-gray-900/50 px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all" placeholder="••••••••" required>
                         </div>
-                        <button type="submit" class="magnificent-button w-full">
-                            Log In
+                        <button type="submit" class="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-all h-10 px-4 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white hover:from-teal-400 hover:to-emerald-500 hover:shadow-[0_0_20px_rgba(42,157,143,0.4)] active:scale-95">
+                            Sign In <i class="fas fa-arrow-right ml-2 text-xs"></i>
                         </button>
-                        <div id="login-message" class="error-message hidden"></div>
-                        <div class="login-help">
-                            <p>Test accounts: admin / 123456</p>
-                            <p>or: user / 123456</p>
+                        <div id="login-message" class="text-sm text-rose-500 text-center font-medium hidden mt-4"></div>
+                        <div class="text-center mt-6 p-4 rounded-lg bg-gray-800/30 border border-gray-800/50">
+                            <p class="text-xs text-gray-400 mb-1">Demo Accounts:</p>
+                            <div class="flex justify-center gap-4 text-xs font-mono text-gray-300">
+                                <span>admin / 123456</span>
+                                <span>user / 123456</span>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -462,33 +468,36 @@ const App = {
 
         const isAdmin = this.state.currentUser?.role === 'admin';
         const mainAppHtml = `
-            <header class="header">
-                <div class="flex items-center space-x-4">
-                    <h1 id="site-title-link" class="header-title">
-                        ${this.state.siteSettings.siteName}
-                    </h1>
-                    <div class="search-container">
-                        <input type="text" id="search-input" placeholder="Search videos..." class="search-input">
+            <header class="sticky top-0 z-50 w-full border-b border-[#1e293b] bg-[#020817]/80 backdrop-blur-md supports-[backdrop-filter]:bg-[#020817]/60 p-4 mb-8 shadow-sm">
+                <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-6 w-full md:w-auto">
+                        <div class="flex items-center gap-2 cursor-pointer group" id="site-title-link">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center text-white font-bold shadow-lg group-hover:scale-105 transition-transform">V</div>
+                            <h1 class="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400">
+                                ${this.state.siteSettings.siteName}
+                            </h1>
+                        </div>
+                        <div class="relative hidden md:flex items-center w-72">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+                            <input type="text" id="search-input" placeholder="Search for videos..." class="flex h-9 w-full rounded-full border border-gray-800 bg-gray-900/50 px-3 py-1 text-sm shadow-inner transition-all placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 pl-9 hover:border-gray-700">
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                        <button id="favorites-button" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500 border border-gray-800 bg-transparent hover:bg-gray-800 text-gray-300 h-9 px-4 py-2 hover:text-white">
+                            <i class="fas fa-heart mr-2 text-rose-500"></i> Favorites
+                        </button>
+                        ${isAdmin ? `
+                            <button id="admin-panel-toggle" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500 bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white h-9 w-9 border border-gray-700">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        ` : ''}
+                        <button id="logout-button" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500 border border-gray-800 bg-transparent hover:bg-rose-950/30 hover:border-rose-900/50 text-gray-300 h-9 px-4 py-2 hover:text-rose-400">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Log Out
+                        </button>
                     </div>
                 </div>
-                <div class="header-actions">
-                    <button id="favorites-button" class="btn btn-secondary">
-                        Favorites
-                    </button>
-                    ${isAdmin ? `
-                        <button id="admin-panel-toggle" class="btn-icon btn-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.942 3.313.841 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c-.942 1.543.841 3.313-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.942-3.313-.841-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.942-1.543.841-3.313 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        </button>
-                    ` : ''}
-                    <button id="logout-button" class="btn btn-secondary">
-                        Log Out
-                    </button>
-                </div>
             </header>
-            <div id="content"></div>
+            <div id="content" class="max-w-7xl mx-auto px-4 md:px-8 pb-12 animate-fade-in-up"></div>
         `;
 
         this.elements.root.innerHTML = mainAppHtml;
@@ -644,11 +653,15 @@ const App = {
                         <h2 class="text-2xl font-bold mb-4">Trending Videos</h2>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             ${trendingVideos.map(video => `
-                                <div class="video-card glass-panel scale-up hover-scale rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
-                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'">
-                                    <div class="video-card-content p-4 flex-grow">
-                                        <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
-                                        <p class="video-card-meta">${video.views} views</p>
+                                <div class="group relative rounded-xl border border-gray-800 bg-[#0f172a]/50 p-2 hover:bg-[#1e293b]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-900/20 hover:-translate-y-1 cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
+                                    <div class="relative overflow-hidden rounded-lg aspect-video">
+                                        <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.src='https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'">
+                                        <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                                        <div class="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md font-medium"><i class="fas fa-play text-[10px] mr-1"></i> Play</div>
+                                    </div>
+                                    <div class="p-3 flex-grow flex flex-col justify-between">
+                                        <h3 class="font-semibold text-gray-100 line-clamp-2 leading-snug group-hover:text-teal-400 transition-colors">${this.escapeHtml(video.title)}</h3>
+                                        <p class="text-xs text-gray-400 mt-2 flex items-center gap-2"><i class="fas fa-eye"></i> ${video.views.toLocaleString()} views</p>
                                     </div>
                                 </div>
                             `).join('')}
@@ -682,14 +695,21 @@ const App = {
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         ${videosToRender.length > 0 ? videosToRender.map(video => `
-                            <div class="video-card glass-panel scale-up hover-scale rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
-                                <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'">
-                                <div class="video-card-content p-4 flex-grow">
-                                    <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
-                                    <p class="video-card-meta">Category: ${video.categoryName}</p>
+                                <div class="group relative rounded-xl border border-gray-800 bg-[#0f172a]/50 p-2 hover:bg-[#1e293b]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-900/20 hover:-translate-y-1 cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
+                                    <div class="relative overflow-hidden rounded-lg aspect-video">
+                                        <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.src='https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'">
+                                        <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                                        <div class="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md font-medium"><i class="fas fa-play text-[10px] mr-1"></i> Play</div>
+                                    </div>
+                                    <div class="p-3 flex-grow flex flex-col justify-between">
+                                        <h3 class="font-semibold text-gray-100 line-clamp-2 leading-snug group-hover:text-teal-400 transition-colors">${this.escapeHtml(video.title)}</h3>
+                                        <div class="flex items-center justify-between mt-2">
+                                            <p class="text-xs text-gray-400 flex items-center gap-1"><i class="fas fa-folder"></i> ${video.categoryName}</p>
+                                            <p class="text-xs text-gray-400"><i class="fas fa-eye"></i> ${video.views || 0}</p>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        `).join('') : '<div class="text-center text-muted col-span-full">No videos found</div>'}
+                        `).join('') : '<div class="text-center text-muted col-span-full py-12 border border-dashed border-gray-800 rounded-xl bg-gray-900/30">No videos found</div>'}
                     </div>
                 </section>
             </div>
@@ -925,14 +945,22 @@ Object.assign(App, {
                         <h2 class="text-2xl font-bold mb-4">My Favorites</h2>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             ${favorites.length > 0 ? favorites.map(video => `
-                                <div class="video-card glass-panel scale-up hover-scale rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
-                                    <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="video-card-img h-48 w-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'">
-                                    <div class="video-card-content p-4 flex-grow">
-                                        <h3 class="video-card-title">${this.escapeHtml(video.title)}</h3>
-                                        <p class="video-card-meta">Category: ${video.categoryName}</p>
+                                <div class="group relative rounded-xl border border-gray-800 bg-[#0f172a]/50 p-2 hover:bg-[#1e293b]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-900/20 hover:-translate-y-1 cursor-pointer flex flex-col h-full" data-video-id="${video.id}">
+                                    <div class="relative overflow-hidden rounded-lg aspect-video">
+                                        <img loading="lazy" src="${video.thumbnailUrl}" alt="${this.escapeHtml(video.title)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.src='https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'">
+                                        <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                                        <div class="absolute top-2 right-2 text-rose-500 bg-black/60 rounded-full p-1.5 backdrop-blur-sm"><i class="fas fa-heart text-xs"></i></div>
+                                        <div class="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md font-medium"><i class="fas fa-play text-[10px] mr-1"></i> Play</div>
+                                    </div>
+                                    <div class="p-3 flex-grow flex flex-col justify-between">
+                                        <h3 class="font-semibold text-gray-100 line-clamp-2 leading-snug group-hover:text-teal-400 transition-colors">${this.escapeHtml(video.title)}</h3>
+                                        <div class="flex items-center justify-between mt-2">
+                                            <p class="text-xs text-gray-400 flex items-center gap-1"><i class="fas fa-folder"></i> ${video.categoryName}</p>
+                                            <p class="text-xs text-gray-400"><i class="fas fa-eye"></i> ${video.views || 0}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            `).join('') : '<div class="text-center text-muted col-span-full">You don\'t have any videos in your favorites yet</div>'}
+                            `).join('') : '<div class="text-center text-muted col-span-full py-12 border border-dashed border-gray-800 rounded-xl bg-gray-900/30">You don\'t have any videos in your favorites yet</div>'}
                         </div>
                     </section>
                 </div>
