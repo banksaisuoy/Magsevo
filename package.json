@@ -9,7 +9,9 @@
     "setup": "node server/setup.js",
     "test": "jest",
     "build:css": "npx tailwindcss -i ./input.css -o ./public/css/tailwind.css --minify",
-    "watch:css": "npx tailwindcss -i ./input.css -o ./public/css/tailwind.css --watch"
+    "watch:css": "npx tailwindcss -i ./input.css -o ./public/css/tailwind.css --watch",
+    "build:insights": "npx browserify src/speed-insights-init.js -o public/js/speed-insights.js",
+    "build": "npm run build:css && npm run build:insights"
   },
   "keywords": [
     "video",
@@ -24,6 +26,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.2.1",
     "@ngrok/ngrok": "^1.5.2",
+    "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.12.0",
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.2",
@@ -42,6 +45,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.5.2",
+    "browserify": "^17.0.1",
     "cssnano": "^7.1.1",
     "eslint": "^10.6.0",
     "eslint-plugin-jest": "^29.15.4",
