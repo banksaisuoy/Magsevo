@@ -1,0 +1,223 @@
+From a4eed9d624f8c6872c16583698a16c99e1dce0c4 Mon Sep 17 00:00:00 2001
+From: Jules <jules@example.com>
+Date: Thu, 30 Jul 2026 23:31:35 +0000
+Subject: [PATCH] Implement backend CRUD functionality for video management
+
+---
+ server/server.js                           |   3 +
+ src/migrations/001_create_videos_table.sql |   9 ++
+ src/routes/videoRoutes.js                  | 168 +++++++++++++++++++++
+ 3 files changed, 180 insertions(+)
+ create mode 100644 src/migrations/001_create_videos_table.sql
+ create mode 100644 src/routes/videoRoutes.js
+
+diff --git a/server/server.js b/server/server.js
+index 794b7be..baa5881 100644
+--- a/server/server.js
+@@ -43,6 +43,7 @@ async function initializeApp() {
+         app.set('db', db);
+ 
+         // Import API routes after database is connected
++        const videoRoutesV2 = require('../src/routes/videoRoutes');
+         const apiRoutes = require('./routes');
+         const healthMonitor = require('./services/healthMonitor');
+         const aiService = require('./services/aiService');
+@@ -63,6 +64,8 @@ async function initializeApp() {
+         app.use('/api', rateLimiters.general);
+ 
+         // Mount API routes
++        // Mount new V2 video routes before legacy API routes to prevent conflict
++        app.use('/api/videos', videoRoutesV2);
+         app.use('/api', apiRoutes);
+ 
+         // Serve frontend
+diff --git a/src/migrations/001_create_videos_table.sql b/src/migrations/001_create_videos_table.sql
+new file mode 100644
+index 0000000..19499f2
+--- /dev/null
+@@ -0,0 +1,9 @@
++CREATE TABLE IF NOT EXISTS videos (
++    id INTEGER PRIMARY KEY AUTOINCREMENT,
++    title TEXT NOT NULL,
++    description TEXT,
++    video_url TEXT NOT NULL,
++    category_id INTEGER,
++    user_id INTEGER,
++    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
++);
+diff --git a/src/routes/videoRoutes.js b/src/routes/videoRoutes.js
+new file mode 100644
+index 0000000..c1acba3
+--- /dev/null
+@@ -0,0 +1,168 @@
++const express = require('express');
++const jwt = require('jsonwebtoken');
++const router = express.Router();
++
++const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
++
++// JWT Authentication Middleware
++function authenticateToken(req, res, next) {
++    const authHeader = req.headers['authorization'];
++    const token = authHeader && authHeader.split(' ')[1];
++
++    if (!token) {
++        return res.status(401).json({ error: 'Access token required' });
++    }
++
++    jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
++        if (err) {
++            return res.status(401).json({ error: 'Invalid token' }); // Memory mentions 401 for edge cases
++        }
++        req.user = user;
++        next();
++    });
++}
++
++// GET /api/videos with pagination
++router.get('/', async (req, res) => {
++    try {
++        const db = req.app.get('db');
++        const page = parseInt(req.query.page) || 1;
++        const limit = parseInt(req.query.limit) || 10;
++        const offset = (page - 1) * limit;
++
++        const videos = await db.all(
++            `SELECT * FROM videos ORDER BY created_at DESC LIMIT ? OFFSET ?`,
++            [limit, offset]
++        );
++
++        const countResult = await db.get(`SELECT COUNT(*) as total FROM videos`);
++        const total = countResult ? countResult.total : 0;
++
++        res.json({
++            success: true,
++            videos,
++            pagination: {
++                page,
++                limit,
++                total,
++                totalPages: Math.ceil(total / limit)
++            }
++        });
++    } catch (error) {
++        console.error('Get videos error:', error);
++        res.status(500).json({ error: 'Internal server error' });
++    }
++});
++
++// GET /api/videos/:id
++router.get('/:id', async (req, res) => {
++    try {
++        const db = req.app.get('db');
++        const { id } = req.params;
++
++        const video = await db.get(
++            `SELECT * FROM videos WHERE id = ?`,
++            [id]
++        );
++
++        if (!video) {
++            return res.status(404).json({ error: 'Video not found' });
++        }
++
++        res.json({ success: true, video });
++    } catch (error) {
++        console.error('Get video error:', error);
++        res.status(500).json({ error: 'Internal server error' });
++    }
++});
++
++// POST /api/videos (authenticated)
++router.post('/', authenticateToken, async (req, res) => {
++    try {
++        const db = req.app.get('db');
++        const { title, description, video_url, category_id } = req.body;
++
++        if (!title || !video_url) {
++            return res.status(400).json({ error: 'Title and video_url are required' });
++        }
++
++        const safeDescription = description !== undefined ? description : null;
++        const safeCategoryId = category_id !== undefined ? category_id : null;
++        // The memory says: "The `users` SQLite table schema supports `id` (INTEGER PRIMARY KEY AUTOINCREMENT)"
++        // "retaining username TEXT UNIQUE and the legacy password field for backward compatibility"
++        // Let's assume req.user might have 'id' or 'userId' or 'username' depending on token structure.
++        const userId = req.user.id !== undefined ? req.user.id : null;
++
++        const result = await db.run(
++            `INSERT INTO videos (title, description, video_url, category_id, user_id)
++             VALUES (?, ?, ?, ?, ?)`,
++            [title, safeDescription, video_url, safeCategoryId, userId]
++        );
++
++        res.status(201).json({
++            success: true,
++            message: 'Video created successfully',
++            videoId: result.lastID || result.id
++        });
++    } catch (error) {
++        console.error('Create video error:', error);
++        res.status(500).json({ error: 'Internal server error' });
++    }
++});
++
++
++
++// PUT /api/videos/:id (authenticated)
++router.put('/:id', authenticateToken, async (req, res) => {
++    try {
++        const db = req.app.get('db');
++        const { id } = req.params;
++        const { title, description, video_url, category_id } = req.body;
++
++        const existingVideo = await db.get(`SELECT * FROM videos WHERE id = ?`, [id]);
++        if (!existingVideo) {
++            return res.status(404).json({ error: 'Video not found' });
++        }
++
++        if (!title || !video_url) {
++            return res.status(400).json({ error: 'Title and video_url are required' });
++        }
++
++        const safeDescription = description !== undefined ? description : null;
++        const safeCategoryId = category_id !== undefined ? category_id : null;
++
++        await db.run(
++            `UPDATE videos 
++             SET title = ?, description = ?, video_url = ?, category_id = ?
++             WHERE id = ?`,
++            [title, safeDescription, video_url, safeCategoryId, id]
++        );
++
++        res.json({ success: true, message: 'Video updated successfully' });
++    } catch (error) {
++        console.error('Update video error:', error);
++        res.status(500).json({ error: 'Internal server error' });
++    }
++});
++
++// DELETE /api/videos/:id (authenticated)
++router.delete('/:id', authenticateToken, async (req, res) => {
++    try {
++        const db = req.app.get('db');
++        const { id } = req.params;
++
++        const existingVideo = await db.get(`SELECT * FROM videos WHERE id = ?`, [id]);
++        if (!existingVideo) {
++            return res.status(404).json({ error: 'Video not found' });
++        }
++
++        await db.run(`DELETE FROM videos WHERE id = ?`, [id]);
++
++        res.json({ success: true, message: 'Video deleted successfully' });
++    } catch (error) {
++        console.error('Delete video error:', error);
++        res.status(500).json({ error: 'Internal server error' });
++    }
++});
++
++module.exports = router;
+\ No newline at end of file
+-- 
+2.53.0
