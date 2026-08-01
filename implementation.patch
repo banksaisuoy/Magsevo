@@ -1,223 +1,336 @@
-From a4eed9d624f8c6872c16583698a16c99e1dce0c4 Mon Sep 17 00:00:00 2001
-From: Jules <jules@example.com>
-Date: Thu, 30 Jul 2026 23:31:35 +0000
-Subject: [PATCH] Implement backend CRUD functionality for video management
-
----
- server/server.js                           |   3 +
- src/migrations/001_create_videos_table.sql |   9 ++
- src/routes/videoRoutes.js                  | 168 +++++++++++++++++++++
- 3 files changed, 180 insertions(+)
- create mode 100644 src/migrations/001_create_videos_table.sql
- create mode 100644 src/routes/videoRoutes.js
-
-diff --git a/server/server.js b/server/server.js
-index 794b7be..baa5881 100644
---- a/server/server.js
-@@ -43,6 +43,7 @@ async function initializeApp() {
-         app.set('db', db);
- 
-         // Import API routes after database is connected
-+        const videoRoutesV2 = require('../src/routes/videoRoutes');
-         const apiRoutes = require('./routes');
-         const healthMonitor = require('./services/healthMonitor');
-         const aiService = require('./services/aiService');
-@@ -63,6 +64,8 @@ async function initializeApp() {
-         app.use('/api', rateLimiters.general);
- 
-         // Mount API routes
-+        // Mount new V2 video routes before legacy API routes to prevent conflict
-+        app.use('/api/videos', videoRoutesV2);
-         app.use('/api', apiRoutes);
- 
-         // Serve frontend
-diff --git a/src/migrations/001_create_videos_table.sql b/src/migrations/001_create_videos_table.sql
-new file mode 100644
-index 0000000..19499f2
---- /dev/null
-@@ -0,0 +1,9 @@
-+CREATE TABLE IF NOT EXISTS videos (
-+    id INTEGER PRIMARY KEY AUTOINCREMENT,
-+    title TEXT NOT NULL,
-+    description TEXT,
-+    video_url TEXT NOT NULL,
-+    category_id INTEGER,
-+    user_id INTEGER,
-+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-+);
-diff --git a/src/routes/videoRoutes.js b/src/routes/videoRoutes.js
-new file mode 100644
-index 0000000..c1acba3
---- /dev/null
-@@ -0,0 +1,168 @@
-+const express = require('express');
-+const jwt = require('jsonwebtoken');
-+const router = express.Router();
-+
-+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
-+
-+// JWT Authentication Middleware
-+function authenticateToken(req, res, next) {
-+    const authHeader = req.headers['authorization'];
-+    const token = authHeader && authHeader.split(' ')[1];
-+
-+    if (!token) {
-+        return res.status(401).json({ error: 'Access token required' });
-+    }
-+
-+    jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
-+        if (err) {
-+            return res.status(401).json({ error: 'Invalid token' }); // Memory mentions 401 for edge cases
-+        }
-+        req.user = user;
-+        next();
-+    });
-+}
-+
-+// GET /api/videos with pagination
-+router.get('/', async (req, res) => {
-+    try {
-+        const db = req.app.get('db');
-+        const page = parseInt(req.query.page) || 1;
-+        const limit = parseInt(req.query.limit) || 10;
-+        const offset = (page - 1) * limit;
-+
-+        const videos = await db.all(
-+            `SELECT * FROM videos ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-+            [limit, offset]
-+        );
-+
-+        const countResult = await db.get(`SELECT COUNT(*) as total FROM videos`);
-+        const total = countResult ? countResult.total : 0;
-+
-+        res.json({
-+            success: true,
-+            videos,
-+            pagination: {
-+                page,
-+                limit,
-+                total,
-+                totalPages: Math.ceil(total / limit)
-+            }
-+        });
-+    } catch (error) {
-+        console.error('Get videos error:', error);
-+        res.status(500).json({ error: 'Internal server error' });
-+    }
-+});
-+
-+// GET /api/videos/:id
-+router.get('/:id', async (req, res) => {
-+    try {
-+        const db = req.app.get('db');
-+        const { id } = req.params;
-+
-+        const video = await db.get(
-+            `SELECT * FROM videos WHERE id = ?`,
-+            [id]
-+        );
-+
-+        if (!video) {
-+            return res.status(404).json({ error: 'Video not found' });
-+        }
-+
-+        res.json({ success: true, video });
-+    } catch (error) {
-+        console.error('Get video error:', error);
-+        res.status(500).json({ error: 'Internal server error' });
-+    }
-+});
-+
-+// POST /api/videos (authenticated)
-+router.post('/', authenticateToken, async (req, res) => {
-+    try {
-+        const db = req.app.get('db');
-+        const { title, description, video_url, category_id } = req.body;
-+
-+        if (!title || !video_url) {
-+            return res.status(400).json({ error: 'Title and video_url are required' });
-+        }
-+
-+        const safeDescription = description !== undefined ? description : null;
-+        const safeCategoryId = category_id !== undefined ? category_id : null;
-+        // The memory says: "The `users` SQLite table schema supports `id` (INTEGER PRIMARY KEY AUTOINCREMENT)"
-+        // "retaining username TEXT UNIQUE and the legacy password field for backward compatibility"
-+        // Let's assume req.user might have 'id' or 'userId' or 'username' depending on token structure.
-+        const userId = req.user.id !== undefined ? req.user.id : null;
-+
-+        const result = await db.run(
-+            `INSERT INTO videos (title, description, video_url, category_id, user_id)
-+             VALUES (?, ?, ?, ?, ?)`,
-+            [title, safeDescription, video_url, safeCategoryId, userId]
-+        );
-+
-+        res.status(201).json({
-+            success: true,
-+            message: 'Video created successfully',
-+            videoId: result.lastID || result.id
-+        });
-+    } catch (error) {
-+        console.error('Create video error:', error);
-+        res.status(500).json({ error: 'Internal server error' });
-+    }
-+});
-+
-+
-+
-+// PUT /api/videos/:id (authenticated)
-+router.put('/:id', authenticateToken, async (req, res) => {
-+    try {
-+        const db = req.app.get('db');
-+        const { id } = req.params;
-+        const { title, description, video_url, category_id } = req.body;
-+
-+        const existingVideo = await db.get(`SELECT * FROM videos WHERE id = ?`, [id]);
-+        if (!existingVideo) {
-+            return res.status(404).json({ error: 'Video not found' });
-+        }
-+
-+        if (!title || !video_url) {
-+            return res.status(400).json({ error: 'Title and video_url are required' });
-+        }
-+
-+        const safeDescription = description !== undefined ? description : null;
-+        const safeCategoryId = category_id !== undefined ? category_id : null;
-+
-+        await db.run(
-+            `UPDATE videos 
-+             SET title = ?, description = ?, video_url = ?, category_id = ?
-+             WHERE id = ?`,
-+            [title, safeDescription, video_url, safeCategoryId, id]
-+        );
-+
-+        res.json({ success: true, message: 'Video updated successfully' });
-+    } catch (error) {
-+        console.error('Update video error:', error);
-+        res.status(500).json({ error: 'Internal server error' });
-+    }
-+});
-+
-+// DELETE /api/videos/:id (authenticated)
-+router.delete('/:id', authenticateToken, async (req, res) => {
-+    try {
-+        const db = req.app.get('db');
-+        const { id } = req.params;
-+
-+        const existingVideo = await db.get(`SELECT * FROM videos WHERE id = ?`, [id]);
-+        if (!existingVideo) {
-+            return res.status(404).json({ error: 'Video not found' });
-+        }
-+
-+        await db.run(`DELETE FROM videos WHERE id = ?`, [id]);
-+
-+        res.json({ success: true, message: 'Video deleted successfully' });
-+    } catch (error) {
-+        console.error('Delete video error:', error);
-+        res.status(500).json({ error: 'Internal server error' });
-+    }
-+});
-+
-+module.exports = router;
+diff --git a/package.json b/package.json
+index 0aeec5a..33f8ebb 100644
+--- a/package.json
+@@ -1,3 +1,7 @@
++{
++  "name": "visionhub",
++  "version": "1.0.0",
++  "scripts": {
+     "start": "node server/server.js"
+   },
+   "dependencies": {
+@@ -5,6 +9,7 @@
+     "bcrypt": "^6.0.0",
+     "express": "^4.18.2",
+     "express-rate-limit": "^8.6.1",
++    "express-validator": "^7.3.2",
+     "fluent-ffmpeg": "^2.1.3",
+     "http-proxy-middleware": "^3.0.5",
+     "jsdom": "^29.1.1",
+@@ -16,4 +21,4 @@
+     "jest": "^29.0.0",
+     "supertest": "^6.3.3"
+   }
+-}
 \ No newline at end of file
--- 
-2.53.0
++}
+diff --git a/src/middleware/validation.js b/src/middleware/validation.js
+new file mode 100644
+index 0000000..d1ff752
+--- /dev/null
+@@ -0,0 +1,83 @@
++const { body, validationResult } = require('express-validator');
++
++const handleValidationErrors = (req, res, next) => {
++    const errors = validationResult(req);
++    if (!errors.isEmpty()) {
++        return res.status(400).json({ errors: errors.array() });
++    }
++    next();
++};
++
++const validateCategoryExists = async (value, { req }) => {
++    const db = req.app.get('db');
++    // Request mentions "category: required, string, must exist in the categories table"
++    
++    if (!db) {
++        throw new Error('Database connection not available');
++    }
++
++    // Try finding by name or ID
++    let category;
++    if (!isNaN(value)) {
++        category = await db.get('SELECT id FROM categories WHERE id = ? OR name = ?', [value, value]);
++    } else {
++        category = await db.get('SELECT id FROM categories WHERE name = ?', [value]);
++    }
++    
++    if (!category) {
++        throw new Error('Category does not exist');
++    }
++    
++    // For convenience in the route, we could assign the category_id if needed, but validation just needs to pass
++    
++    return true;
++};
++
++const videoValidationRules = [
++    body('title')
++        .exists()
++        .withMessage('Title is required')
++        .isString()
++        .withMessage('Title must be a string')
++        .isLength({ max: 255 })
++        .withMessage('Title cannot exceed 255 characters')
++        .escape(),
++    body('description')
++        .optional({ nullable: true, checkFalsy: true })
++        .isString()
++        .withMessage('Description must be a string')
++        .isLength({ max: 1000 })
++        .withMessage('Description cannot exceed 1000 characters')
++        .escape(),
++    body('category')
++        .exists()
++        .withMessage('Category is required')
++        .isString()
++        .withMessage('Category must be a string')
++        .custom(validateCategoryExists),
++    body('tags')
++        .optional({ nullable: true, checkFalsy: true })
++        .isArray()
++        .withMessage('Tags must be an array of strings'),
++    body('tags.*')
++        .isString()
++        .withMessage('Each tag must be a string')
++        .isLength({ max: 50 })
++        .withMessage('Each tag cannot exceed 50 characters')
++        .escape()
++];
++
++const validateVideoCreate = [
++    ...videoValidationRules,
++    handleValidationErrors
++];
++
++const validateVideoUpdate = [
++    ...videoValidationRules,
++    handleValidationErrors
++];
++
++module.exports = {
++    validateVideoCreate,
++    validateVideoUpdate
++};
+diff --git a/src/routes/videoRoutes.js b/src/routes/videoRoutes.js
+index 096b4fa..e5750ac 100644
+--- a/src/routes/videoRoutes.js
+@@ -1,5 +1,6 @@
+ const express = require('express');
+ const jwt = require('jsonwebtoken');
++const { validateVideoCreate, validateVideoUpdate } = require('../middleware/validation');
+ const router = express.Router();
+ 
+ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+@@ -77,17 +78,22 @@ router.get('/:id', async (req, res) => {
+ });
+ 
+ // POST /api/videos (authenticated)
+-router.post('/', authenticateToken, async (req, res) => {
++router.post('/', authenticateToken, validateVideoCreate, async (req, res) => {
+     try {
+         const db = req.app.get('db');
+-        const { title, description, video_url, category_id } = req.body;
++        const { title, description, video_url, category_id, category } = req.body;
+ 
+         if (!title || !video_url) {
+             return res.status(400).json({ error: 'Title and video_url are required' });
+         }
+ 
+         const safeDescription = description !== undefined ? description : null;
+-        const safeCategoryId = category_id !== undefined ? category_id : null;
++        
++        let safeCategoryId = category_id !== undefined ? category_id : null;
++        if (category && !safeCategoryId) {
++            const catRecord = await db.get('SELECT id FROM categories WHERE name = ? OR id = ?', [category, category]);
++            if (catRecord) safeCategoryId = catRecord.id;
++        }
+         // The memory says: "The `users` SQLite table schema supports `id` (INTEGER PRIMARY KEY AUTOINCREMENT)"
+         // "retaining username TEXT UNIQUE and the legacy password field for backward compatibility"
+         // Let's assume req.user might have 'id' or 'userId' or 'username' depending on token structure.
+@@ -113,11 +119,11 @@ router.post('/', authenticateToken, async (req, res) => {
+ 
+ 
+ // PUT /api/videos/:id (authenticated)
+-router.put('/:id', authenticateToken, async (req, res) => {
++router.put('/:id', authenticateToken, validateVideoUpdate, async (req, res) => {
+     try {
+         const db = req.app.get('db');
+         const { id } = req.params;
+-        const { title, description, video_url, category_id } = req.body;
++        const { title, description, video_url, category_id, category } = req.body;
+ 
+         const existingVideo = await db.get(`SELECT * FROM videos WHERE id = ?`, [id]);
+         if (!existingVideo) {
+@@ -129,7 +135,11 @@ router.put('/:id', authenticateToken, async (req, res) => {
+         }
+ 
+         const safeDescription = description !== undefined ? description : null;
+-        const safeCategoryId = category_id !== undefined ? category_id : null;
++        let safeCategoryId = category_id !== undefined ? category_id : null;
++        if (category && !safeCategoryId) {
++            const catRecord = await db.get('SELECT id FROM categories WHERE name = ? OR id = ?', [category, category]);
++            if (catRecord) safeCategoryId = catRecord.id;
++        }
+ 
+         await db.run(
+             `UPDATE videos 
+diff --git a/tests/validation.test.js b/tests/validation.test.js
+new file mode 100644
+index 0000000..3162615
+--- /dev/null
+@@ -0,0 +1,154 @@
++const request = require('supertest');
++const express = require('express');
++const videoRoutes = require('../src/routes/videoRoutes');
++const jwt = require('jsonwebtoken');
++
++jest.mock('jsonwebtoken', () => ({
++    verify: jest.fn((token, secret, options, callback) => {
++        if (token === 'valid-token') {
++            callback(null, { id: 1, username: 'testuser' });
++        } else {
++            callback(new Error('Invalid token'), null);
++        }
++    })
++}));
++
++describe('Video Route Validation', () => {
++    let app;
++    let mockDb;
++
++    beforeEach(() => {
++        app = express();
++        app.use(express.json());
++
++        mockDb = {
++            get: jest.fn(),
++            run: jest.fn().mockResolvedValue({ lastID: 1, changes: 1 })
++        };
++        app.set('db', mockDb);
++
++        app.use('/api/videos', videoRoutes);
++    });
++
++    afterEach(() => {
++        jest.clearAllMocks();
++    });
++
++    describe('POST /api/videos', () => {
++        it('should return 400 for invalid payload (missing title)', async () => {
++            const res = await request(app)
++                .post('/api/videos')
++                .set('Authorization', 'Bearer valid-token')
++                .send({
++                    description: 'Some desc',
++                    video_url: 'http://test.com',
++                    category: 'Development'
++                });
++
++            expect(res.status).toBe(400);
++            expect(res.body).toHaveProperty('errors');
++            expect(res.body.errors).toEqual(
++                expect.arrayContaining([
++                    expect.objectContaining({ msg: 'Title is required', path: 'title' })
++                ])
++            );
++        });
++
++        it('should return 400 for invalid payload (missing category)', async () => {
++            const res = await request(app)
++                .post('/api/videos')
++                .set('Authorization', 'Bearer valid-token')
++                .send({
++                    title: 'My title',
++                    video_url: 'http://test.com'
++                });
++
++            expect(res.status).toBe(400);
++            expect(res.body.errors).toEqual(
++                expect.arrayContaining([
++                    expect.objectContaining({ msg: 'Category is required', path: 'category' })
++                ])
++            );
++        });
++
++        it('should return 400 if category does not exist in db', async () => {
++            mockDb.get.mockResolvedValueOnce(null); // Category not found
++
++            const res = await request(app)
++                .post('/api/videos')
++                .set('Authorization', 'Bearer valid-token')
++                .send({
++                    title: 'My title',
++                    video_url: 'http://test.com',
++                    category: 'NonExistent'
++                });
++
++            expect(res.status).toBe(400);
++            expect(res.body.errors).toEqual(
++                expect.arrayContaining([
++                    expect.objectContaining({ msg: 'Category does not exist', path: 'category' })
++                ])
++            );
++        });
++
++        it('should return 201 for valid payload', async () => {
++            mockDb.get.mockResolvedValueOnce({ id: 2 }); // Category found
++            mockDb.run.mockResolvedValueOnce({ lastID: 10 });
++
++            const res = await request(app)
++                .post('/api/videos')
++                .set('Authorization', 'Bearer valid-token')
++                .send({
++                    title: 'Valid title',
++                    description: 'Valid description',
++                    video_url: 'http://test.com',
++                    category: 'Development',
++                    tags: ['tag1', 'tag2']
++                });
++
++            expect(res.status).toBe(201);
++            expect(res.body.success).toBe(true);
++            expect(mockDb.get).toHaveBeenCalledWith('SELECT id FROM categories WHERE name = ?', ['Development']);
++            // A second get might be called inside the route depending on the implementation
++        });
++    });
++
++    describe('PUT /api/videos/:id', () => {
++        it('should return 400 for invalid payload (title too long)', async () => {
++            mockDb.get.mockResolvedValueOnce({ id: 1, title: 'Old' }); // Mock existing video
++
++            const res = await request(app)
++                .put('/api/videos/1')
++                .set('Authorization', 'Bearer valid-token')
++                .send({
++                    title: 'A'.repeat(256), // > 255 chars
++                    video_url: 'http://test.com',
++                    category: 'Development'
++                });
++
++            expect(res.status).toBe(400);
++            expect(res.body.errors).toEqual(
++                expect.arrayContaining([
++                    expect.objectContaining({ msg: 'Title cannot exceed 255 characters', path: 'title' })
++                ])
++            );
++        });
++
++        it('should return 200 for valid payload', async () => {
++            mockDb.get.mockResolvedValueOnce({ id: 2 }); // Category found
++            mockDb.get.mockResolvedValueOnce({ id: 1, title: 'Old' }); // Existing video
++            
++            const res = await request(app)
++                .put('/api/videos/1')
++                .set('Authorization', 'Bearer valid-token')
++                .send({
++                    title: 'Valid title',
++                    video_url: 'http://test.com',
++                    category: 'Development'
++                });
++
++            expect(res.status).toBe(200);
++            expect(res.body.success).toBe(true);
++        });
++    });
++});
