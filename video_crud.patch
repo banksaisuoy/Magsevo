@@ -1,0 +1,401 @@
+diff --git a/src/app.js b/src/app.js
+new file mode 100644
+index 0000000..514dace
+--- /dev/null
+@@ -0,0 +1,74 @@
++const express = require('express');
++const sqlite3 = require('sqlite3').verbose();
++const path = require('path');
++const fs = require('fs');
++
++const videoRoutes = require('./routes/video');
++
++const app = express();
++app.use(express.json());
++
++// Initialize SQLite database
++const initDb = (dbPath) => {
++  return new Promise((resolve, reject) => {
++    const db = new sqlite3.Database(dbPath, (err) => {
++      if (err) {
++        return reject(err);
++      }
++      
++      // Execute migrations
++      const migrationPath = path.join(__dirname, 'migrations', '001_create_videos_table.sql');
++      if (fs.existsSync(migrationPath)) {
++        const migrationSql = fs.readFileSync(migrationPath, 'utf8');
++        db.exec(migrationSql, (err) => {
++          if (err) {
++            return reject(err);
++          }
++          resolve(db);
++        });
++      } else {
++        // If no migration file, try creating the table directly (for fallback)
++        db.run(`CREATE TABLE IF NOT EXISTS videos (
++          id INTEGER PRIMARY KEY AUTOINCREMENT,
++          title TEXT NOT NULL,
++          description TEXT,
++          video_url TEXT NOT NULL,
++          category_id INTEGER,
++          user_id INTEGER,
++          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
++        )`, (err) => {
++          if (err) return reject(err);
++          resolve(db);
++        });
++      }
++    });
++  });
++};
++
++// Start function returning a promise that resolves when db is ready
++const startApp = async (dbPath = ':memory:') => {
++  try {
++    const db = await initDb(dbPath);
++    app.set('db', db);
++    
++    // Mount routes
++    app.use('/api/videos', videoRoutes(db));
++
++    // Expose close connection for testing
++    app.closeDb = () => {
++      return new Promise((resolve, reject) => {
++        db.close((err) => {
++          if (err) return reject(err);
++          resolve();
++        });
++      });
++    };
++
++    return app;
++  } catch (error) {
++    console.error('Failed to start app:', error);
++    throw error;
++  }
++};
++
++module.exports = startApp;
+diff --git a/src/controllers/videoController.js b/src/controllers/videoController.js
+new file mode 100644
+index 0000000..0788794
+--- /dev/null
+@@ -0,0 +1,116 @@
++const VideoModel = require('../db/video');
++
++class VideoController {
++  constructor(db) {
++    this.videoModel = new VideoModel(db);
++  }
++
++  getAllVideos = async (req, res) => {
++    try {
++      const videos = await this.videoModel.getAllVideos();
++      res.status(200).json(videos);
++    } catch (error) {
++      console.error('Error fetching videos:', error);
++      res.status(500).json({ error: 'Internal server error' });
++    }
++  };
++
++  getVideoById = async (req, res) => {
++    try {
++      const id = parseInt(req.params.id, 10);
++      if (isNaN(id)) {
++        return res.status(400).json({ error: 'Invalid video ID' });
++      }
++
++      const video = await this.videoModel.getVideoById(id);
++      if (!video) {
++        return res.status(404).json({ error: 'Video not found' });
++      }
++
++      res.status(200).json(video);
++    } catch (error) {
++      console.error('Error fetching video:', error);
++      res.status(500).json({ error: 'Internal server error' });
++    }
++  };
++
++  createVideo = async (req, res) => {
++    try {
++      const { title, description, video_url, category_id, user_id } = req.body;
++
++      if (!title || !video_url) {
++        return res.status(400).json({ error: 'Title and video_url are required' });
++      }
++
++      const newVideoId = await this.videoModel.createVideo({
++        title,
++        description,
++        video_url,
++        category_id,
++        user_id
++      });
++
++      const newVideo = await this.videoModel.getVideoById(newVideoId);
++      res.status(201).json(newVideo);
++    } catch (error) {
++      console.error('Error creating video:', error);
++      res.status(500).json({ error: 'Internal server error' });
++    }
++  };
++
++  updateVideo = async (req, res) => {
++    try {
++      const id = parseInt(req.params.id, 10);
++      if (isNaN(id)) {
++        return res.status(400).json({ error: 'Invalid video ID' });
++      }
++
++      const { title, description, video_url, category_id, user_id } = req.body;
++
++      if (!title || !video_url) {
++        return res.status(400).json({ error: 'Title and video_url are required' });
++      }
++
++      const existingVideo = await this.videoModel.getVideoById(id);
++      if (!existingVideo) {
++        return res.status(404).json({ error: 'Video not found' });
++      }
++
++      await this.videoModel.updateVideo(id, {
++        title,
++        description,
++        video_url,
++        category_id,
++        user_id
++      });
++
++      const updatedVideo = await this.videoModel.getVideoById(id);
++      res.status(200).json(updatedVideo);
++    } catch (error) {
++      console.error('Error updating video:', error);
++      res.status(500).json({ error: 'Internal server error' });
++    }
++  };
++
++  deleteVideo = async (req, res) => {
++    try {
++      const id = parseInt(req.params.id, 10);
++      if (isNaN(id)) {
++        return res.status(400).json({ error: 'Invalid video ID' });
++      }
++
++      const existingVideo = await this.videoModel.getVideoById(id);
++      if (!existingVideo) {
++        return res.status(404).json({ error: 'Video not found' });
++      }
++
++      await this.videoModel.deleteVideo(id);
++      res.status(204).send();
++    } catch (error) {
++      console.error('Error deleting video:', error);
++      res.status(500).json({ error: 'Internal server error' });
++    }
++  };
++}
++
++module.exports = VideoController;
+diff --git a/src/db/video.js b/src/db/video.js
+new file mode 100644
+index 0000000..1d18211
+--- /dev/null
+@@ -0,0 +1,84 @@
++const sqlite3 = require('sqlite3').verbose();
++const path = require('path');
++
++const run = (db, sql, params = []) => {
++  return new Promise((resolve, reject) => {
++    db.run(sql, params, function (err) {
++      if (err) {
++        return reject(err);
++      }
++      resolve(this);
++    });
++  });
++};
++
++const get = (db, sql, params = []) => {
++  return new Promise((resolve, reject) => {
++    db.get(sql, params, (err, result) => {
++      if (err) {
++        return reject(err);
++      }
++      resolve(result);
++    });
++  });
++};
++
++const all = (db, sql, params = []) => {
++  return new Promise((resolve, reject) => {
++    db.all(sql, params, (err, rows) => {
++      if (err) {
++        return reject(err);
++      }
++      resolve(rows);
++    });
++  });
++};
++
++class VideoModel {
++  constructor(db) {
++    this.db = db;
++  }
++
++  async getAllVideos() {
++    return all(this.db, `SELECT * FROM videos ORDER BY created_at DESC`);
++  }
++
++  async getVideoById(id) {
++    return get(this.db, `SELECT * FROM videos WHERE id = ?`, [id]);
++  }
++
++  async createVideo(video) {
++    const { title, description, video_url, category_id, user_id } = video;
++    const safeDescription = description !== undefined ? description : null;
++    const safeCategoryId = category_id !== undefined ? category_id : null;
++    const safeUserId = user_id !== undefined ? user_id : null;
++
++    const result = await run(
++      this.db,
++      `INSERT INTO videos (title, description, video_url, category_id, user_id) VALUES (?, ?, ?, ?, ?)`,
++      [title, safeDescription, video_url, safeCategoryId, safeUserId]
++    );
++    return result.lastID;
++  }
++
++  async updateVideo(id, video) {
++    const { title, description, video_url, category_id, user_id } = video;
++    const safeDescription = description !== undefined ? description : null;
++    const safeCategoryId = category_id !== undefined ? category_id : null;
++    const safeUserId = user_id !== undefined ? user_id : null;
++
++    const result = await run(
++      this.db,
++      `UPDATE videos SET title = ?, description = ?, video_url = ?, category_id = ?, user_id = ? WHERE id = ?`,
++      [title, safeDescription, video_url, safeCategoryId, safeUserId, id]
++    );
++    return result.changes;
++  }
++
++  async deleteVideo(id) {
++    const result = await run(this.db, `DELETE FROM videos WHERE id = ?`, [id]);
++    return result.changes;
++  }
++}
++
++module.exports = VideoModel;
+diff --git a/src/routes/video.js b/src/routes/video.js
+new file mode 100644
+index 0000000..6964665
+--- /dev/null
+@@ -0,0 +1,15 @@
++const express = require('express');
++const VideoController = require('../controllers/videoController');
++
++module.exports = (db) => {
++  const router = express.Router();
++  const videoController = new VideoController(db);
++
++  router.get('/', videoController.getAllVideos);
++  router.get('/:id', videoController.getVideoById);
++  router.post('/', videoController.createVideo);
++  router.put('/:id', videoController.updateVideo);
++  router.delete('/:id', videoController.deleteVideo);
++
++  return router;
++};
+diff --git a/tests/video.test.js b/tests/video.test.js
+new file mode 100644
+index 0000000..b87adc5
+--- /dev/null
+@@ -0,0 +1,87 @@
++const request = require('supertest');
++const startApp = require('../src/app');
++
++let app;
++
++beforeAll(async () => {
++  app = await startApp(':memory:');
++});
++
++afterAll(async () => {
++  if (app && app.closeDb) {
++    await app.closeDb();
++  }
++});
++
++describe('Video CRUD API', () => {
++  let createdVideoId;
++
++  it('should create a new video (POST /api/videos)', async () => {
++    const res = await request(app)
++      .post('/api/videos')
++      .send({
++        title: 'Test Video',
++        description: 'Test description',
++        video_url: 'http://example.com/video.mp4',
++        category_id: 1,
++        user_id: 1
++      });
++
++    expect(res.statusCode).toEqual(201);
++    expect(res.body).toHaveProperty('id');
++    expect(res.body.title).toEqual('Test Video');
++    createdVideoId = res.body.id;
++  });
++
++  it('should return 400 when missing required fields (POST /api/videos)', async () => {
++    const res = await request(app)
++      .post('/api/videos')
++      .send({
++        description: 'No title or url'
++      });
++    expect(res.statusCode).toEqual(400);
++  });
++
++  it('should fetch all videos (GET /api/videos)', async () => {
++    const res = await request(app).get('/api/videos');
++    expect(res.statusCode).toEqual(200);
++    expect(Array.isArray(res.body)).toBeTruthy();
++    expect(res.body.length).toBeGreaterThan(0);
++  });
++
++  it('should fetch a video by id (GET /api/videos/:id)', async () => {
++    const res = await request(app).get(`/api/videos/${createdVideoId}`);
++    expect(res.statusCode).toEqual(200);
++    expect(res.body.id).toEqual(createdVideoId);
++    expect(res.body.title).toEqual('Test Video');
++  });
++
++  it('should return 404 for a non-existent video (GET /api/videos/:id)', async () => {
++    const res = await request(app).get('/api/videos/9999');
++    expect(res.statusCode).toEqual(404);
++  });
++
++  it('should update a video (PUT /api/videos/:id)', async () => {
++    const res = await request(app)
++      .put(`/api/videos/${createdVideoId}`)
++      .send({
++        title: 'Updated Video Title',
++        description: 'Updated description',
++        video_url: 'http://example.com/updated.mp4',
++        category_id: 2,
++        user_id: 1
++      });
++
++    expect(res.statusCode).toEqual(200);
++    expect(res.body.title).toEqual('Updated Video Title');
++    expect(res.body.video_url).toEqual('http://example.com/updated.mp4');
++  });
++
++  it('should delete a video (DELETE /api/videos/:id)', async () => {
++    const res = await request(app).delete(`/api/videos/${createdVideoId}`);
++    expect(res.statusCode).toEqual(204);
++
++    const checkRes = await request(app).get(`/api/videos/${createdVideoId}`);
++    expect(checkRes.statusCode).toEqual(404);
++  });
++});
