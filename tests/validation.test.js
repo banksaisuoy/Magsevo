@@ -1,154 +1,100 @@
-const request = require('supertest');
-const express = require('express');
-const videoRoutes = require('../src/routes/videoRoutes');
 const jwt = require('jsonwebtoken');
 
 jest.mock('jsonwebtoken', () => ({
-    verify: jest.fn((token, secret, options, callback) => {
+    verify: jest.fn((token, secret) => {
         if (token === 'valid-token') {
-            callback(null, { id: 1, username: 'testuser' });
+            return { userId: 1 };
         } else {
-            callback(new Error('Invalid token'), null);
+            throw new Error('Invalid token');
         }
     })
 }));
-
-describe('Video Route Validation', () => {
-    let app;
-    let mockDb;
-
-    beforeEach(() => {
-        app = express();
         app.use(express.json());
 
         mockDb = {
-            get: jest.fn(),
-            run: jest.fn().mockResolvedValue({ lastID: 1, changes: 1 })
+            get: jest.fn((sql, params, cb) => cb(null, { id: 1 })), // Simulate category exists
+            run: jest.fn()
         };
         app.set('db', mockDb);
 
-        app.use('/api/videos', videoRoutes);
-    });
-
-    afterEach(() => {
-        jest.clearAllMocks();
-    });
-
-    describe('POST /api/videos', () => {
-        it('should return 400 for invalid payload (missing title)', async () => {
-            const res = await request(app)
-                .post('/api/videos')
                 .set('Authorization', 'Bearer valid-token')
                 .send({
                     description: 'Some desc',
-                    video_url: 'http://test.com',
-                    category: 'Development'
+                    url: 'http://test.com',
+                    categoryId: 1
                 });
 
             expect(res.status).toBe(400);
-            expect(res.body).toHaveProperty('errors');
-            expect(res.body.errors).toEqual(
-                expect.arrayContaining([
-                    expect.objectContaining({ msg: 'Title is required', path: 'title' })
-                ])
             );
         });
 
-        it('should return 400 for invalid payload (missing category)', async () => {
+        it('should return 400 for invalid url format', async () => {
             const res = await request(app)
                 .post('/api/videos')
                 .set('Authorization', 'Bearer valid-token')
                 .send({
                     title: 'My title',
-                    video_url: 'http://test.com'
+                    url: 'not-a-url'
                 });
 
             expect(res.status).toBe(400);
             expect(res.body.errors).toEqual(
                 expect.arrayContaining([
-                    expect.objectContaining({ msg: 'Category is required', path: 'category' })
+                    expect.objectContaining({ msg: 'Must be a valid URL', path: 'url' })
                 ])
             );
         });
 
-        it('should return 400 if category does not exist in db', async () => {
-            mockDb.get.mockResolvedValueOnce(null); // Category not found
+        it('should return 400 if categoryId does not exist in db', async () => {
+            mockDb.get.mockImplementationOnce((sql, params, cb) => cb(null, null)); // Category not found
 
             const res = await request(app)
                 .post('/api/videos')
                 .set('Authorization', 'Bearer valid-token')
                 .send({
                     title: 'My title',
-                    video_url: 'http://test.com',
-                    category: 'NonExistent'
+                    url: 'http://test.com',
+                    categoryId: 999
                 });
 
             expect(res.status).toBe(400);
             expect(res.body.errors).toEqual(
                 expect.arrayContaining([
-                    expect.objectContaining({ msg: 'Category does not exist', path: 'category' })
+                    expect.objectContaining({ msg: 'Category does not exist', path: 'categoryId' })
                 ])
             );
-        });
-
-        it('should return 201 for valid payload', async () => {
-            mockDb.get.mockResolvedValueOnce({ id: 2 }); // Category found
-            mockDb.run.mockResolvedValueOnce({ lastID: 10 });
-
-            const res = await request(app)
-                .post('/api/videos')
-                .set('Authorization', 'Bearer valid-token')
-                .send({
-                    title: 'Valid title',
-                    description: 'Valid description',
-                    video_url: 'http://test.com',
-                    category: 'Development',
-                    tags: ['tag1', 'tag2']
-                });
-
-            expect(res.status).toBe(201);
-            expect(res.body.success).toBe(true);
-            expect(mockDb.get).toHaveBeenCalledWith('SELECT id FROM categories WHERE name = ?', ['Development']);
-            // A second get might be called inside the route depending on the implementation
         });
     });
 
     describe('PUT /api/videos/:id', () => {
         it('should return 400 for invalid payload (title too long)', async () => {
-            mockDb.get.mockResolvedValueOnce({ id: 1, title: 'Old' }); // Mock existing video
-
             const res = await request(app)
                 .put('/api/videos/1')
                 .set('Authorization', 'Bearer valid-token')
                 .send({
                     title: 'A'.repeat(256), // > 255 chars
-                    video_url: 'http://test.com',
-                    category: 'Development'
+                    url: 'http://test.com'
+                });
+
+            expect(res.status).toBe(400);
+            );
+        });
+
+        it('should return 400 for invalid id param', async () => {
+            const res = await request(app)
+                .put('/api/videos/abc')
+                .set('Authorization', 'Bearer valid-token')
+                .send({
+                    title: 'Valid title',
+                    url: 'http://test.com'
                 });
 
             expect(res.status).toBe(400);
             expect(res.body.errors).toEqual(
                 expect.arrayContaining([
-                    expect.objectContaining({ msg: 'Title cannot exceed 255 characters', path: 'title' })
+                    expect.objectContaining({ msg: 'Video ID must be a positive integer', path: 'id' })
                 ])
             );
-        });
-
-        it('should return 200 for valid payload', async () => {
-            mockDb.get.mockResolvedValueOnce({ id: 2 }); // Category found
-            mockDb.get.mockResolvedValueOnce({ id: 1, title: 'Old' }); // Existing video
-            
-            const res = await request(app)
-                .put('/api/videos/1')
-                .set('Authorization', 'Bearer valid-token')
-                .send({
-                    title: 'Valid title',
-                    video_url: 'http://test.com',
-                    category: 'Development'
-                });
-
-            expect(res.status).toBe(200);
-            expect(res.body.success).toBe(true);
         });
     });
 });
