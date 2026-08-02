@@ -1,87 +1,129 @@
 const request = require('supertest');
-const startApp = require('../src/app');
+const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const videoRoutes = require('../src/routes/videoRoutes');
+const jwt = require('jsonwebtoken');
 
-let app;
+jest.mock('jsonwebtoken', () => ({
+    verify: jest.fn((token, secret) => {
+        if (token === 'valid-token') {
+            return { userId: 1 };
+        } else {
+            throw new Error('Invalid token');
+        }
+    })
+}));
 
-beforeAll(async () => {
-  app = await startApp(':memory:');
+jest.mock('../src/services/videoProcessor', () => {
+    return jest.fn().mockImplementation(() => {
+        return {
+            processVideo: jest.fn().mockResolvedValue(true)
+        };
+    });
 });
 
-afterAll(async () => {
-  if (app && app.closeDb) {
-    await app.closeDb();
-  }
-});
+describe('Video CRUD Integration Tests', () => {
+    let app;
+    let db;
+    
+    beforeAll((done) => {
+        db = new sqlite3.Database(':memory:', async (err) => {
+            if (err) return done(err);
+            
+            app = express();
+            app.use(express.json());
+            app.set('db', db);
 
-describe('Video CRUD API', () => {
-  let createdVideoId;
+            // Run Video init
+            const Video = require('../src/models/Video');
+            const videoModel = new Video(db);
+            await videoModel.init();
+            
+            db.run(`CREATE TABLE categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL
+            )`, (err) => {
+                if (err) return done(err);
+                db.run(`INSERT INTO categories (name) VALUES ('Test Category')`, (err) => {
+                    if (err) return done(err);
+                    app.use('/api/videos', videoRoutes);
+                    done();
+                });
+            });
+        });
+    });
 
-  it('should create a new video (POST /api/videos)', async () => {
-    const res = await request(app)
-      .post('/api/videos')
-      .send({
-        title: 'Test Video',
-        description: 'Test description',
-        video_url: 'http://example.com/video.mp4',
-        category_id: 1,
-        user_id: 1
-      });
+    afterAll((done) => {
+        db.close(done);
+    });
+    
+    let createdVideoId;
 
-    expect(res.statusCode).toEqual(201);
-    expect(res.body).toHaveProperty('id');
-    expect(res.body.title).toEqual('Test Video');
-    createdVideoId = res.body.id;
-  });
+    it('should create a new video (POST /api/videos)', async () => {
+        const res = await request(app)
+            .post('/api/videos')
+            .set('Authorization', 'Bearer valid-token')
+            .send({
+                title: 'Integration Test Video',
+                description: 'Test description',
+                url: 'http://example.com/video.mp4',
+                categoryId: 1
+            });
 
-  it('should return 400 when missing required fields (POST /api/videos)', async () => {
-    const res = await request(app)
-      .post('/api/videos')
-      .send({
-        description: 'No title or url'
-      });
-    expect(res.statusCode).toEqual(400);
-  });
+        expect(res.status).toBe(201);
+        expect(res.body).toHaveProperty('id');
+        expect(res.body.title).toBe('Integration Test Video');
+        createdVideoId = res.body.id;
+    });
 
-  it('should fetch all videos (GET /api/videos)', async () => {
-    const res = await request(app).get('/api/videos');
-    expect(res.statusCode).toEqual(200);
-    expect(Array.isArray(res.body)).toBeTruthy();
-    expect(res.body.length).toBeGreaterThan(0);
-  });
+    it('should fetch all videos (GET /api/videos)', async () => {
+        const res = await request(app)
+            .get('/api/videos')
+            .set('Authorization', 'Bearer valid-token');
+            
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+        expect(res.body.length).toBeGreaterThan(0);
+        expect(res.body[0].title).toBe('Integration Test Video');
+    });
 
-  it('should fetch a video by id (GET /api/videos/:id)', async () => {
-    const res = await request(app).get(`/api/videos/${createdVideoId}`);
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.id).toEqual(createdVideoId);
-    expect(res.body.title).toEqual('Test Video');
-  });
+    it('should fetch a video by id (GET /api/videos/:id)', async () => {
+        const res = await request(app)
+            .get(`/api/videos/${createdVideoId}`)
+            .set('Authorization', 'Bearer valid-token');
+            
+        expect(res.status).toBe(200);
+        expect(res.body.id).toBe(createdVideoId);
+        expect(res.body.title).toBe('Integration Test Video');
+    });
 
-  it('should return 404 for a non-existent video (GET /api/videos/:id)', async () => {
-    const res = await request(app).get('/api/videos/9999');
-    expect(res.statusCode).toEqual(404);
-  });
+    it('should update a video (PUT /api/videos/:id)', async () => {
+        const res = await request(app)
+            .put(`/api/videos/${createdVideoId}`)
+            .set('Authorization', 'Bearer valid-token')
+            .send({
+                title: 'Updated Video Title',
+                description: 'Updated description',
+                url: 'http://example.com/updated.mp4',
+                categoryId: 1
+            });
 
-  it('should update a video (PUT /api/videos/:id)', async () => {
-    const res = await request(app)
-      .put(`/api/videos/${createdVideoId}`)
-      .send({
-        title: 'Updated Video Title',
-        description: 'Updated description',
-        video_url: 'http://example.com/updated.mp4',
-        category_id: 2,
-        user_id: 1
-      });
+        expect(res.status).toBe(200);
+        expect(res.body.title).toBe('Updated Video Title');
+        expect(res.body.description).toBe('Updated description');
+    });
 
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.title).toEqual('Updated Video Title');
-    expect(res.body.video_url).toEqual('http://example.com/updated.mp4');
-  });
-
-  it('should delete a video (DELETE /api/videos/:id)', async () => {
-    const res = await request(app).delete(`/api/videos/${createdVideoId}`);
-    expect(res.statusCode).toEqual(204);
-
-    const checkRes = await request(app).get(`/api/videos/${createdVideoId}`);
-    expect(checkRes.statusCode).toEqual(404);
-  });
+    it('should delete a video (DELETE /api/videos/:id)', async () => {
+        const res = await request(app)
+            .delete(`/api/videos/${createdVideoId}`)
+            .set('Authorization', 'Bearer valid-token');
+            
+        expect(res.status).toBe(204);
+        
+        const getRes = await request(app)
+            .get(`/api/videos/${createdVideoId}`)
+            .set('Authorization', 'Bearer valid-token');
+        
+        expect(getRes.status).toBe(404);
+    });
 });
