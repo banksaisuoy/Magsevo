@@ -10,11 +10,28 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+const PORT = Number(process.env.PORT) || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+const JWT_SECRET = process.env.JWT_SECRET || (isProduction ? '' : 'dev-only-change-me');
+if (isProduction && JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be set to a random value of at least 32 characters in production');
+}
+
+const configuredOrigins = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+const corsOptions = {
+    origin: isProduction
+        ? (origin, callback) => {
+            if (!origin || configuredOrigins.includes(origin)) return callback(null, true);
+            return callback(new Error('Origin is not allowed by CORS'));
+        }
+        : true,
+};
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));

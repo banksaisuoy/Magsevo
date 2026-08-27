@@ -234,10 +234,15 @@ async function setupDatabase() {
         // Seed initial data
         console.log('Seeding initial data...');
 
-        // Create default users
+        // Create default users. Demo credentials are allowed only outside production.
+        const isProduction = process.env.NODE_ENV === 'production';
+        const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || (isProduction ? '' : '123456');
+        if (!adminPassword) {
+            throw new Error('DEFAULT_ADMIN_PASSWORD is required in production before database setup');
+        }
         try {
-            await User.create(database, { username: 'admin', password: '123456', role: 'admin' });
-            console.log('✓ Created admin user (username: admin, password: 123456)');
+            await User.create(database, { username: process.env.DEFAULT_ADMIN_USERNAME || 'admin', password: adminPassword, role: 'admin' });
+            console.log('✓ Created admin user');
         } catch (err) {
             if (err.message.includes('UNIQUE constraint failed')) {
                 console.log('✓ Admin user already exists');
@@ -246,14 +251,18 @@ async function setupDatabase() {
             }
         }
 
-        try {
-            await User.create(database, { username: 'user', password: '123456', role: 'user' });
-            console.log('✓ Created test user (username: user, password: 123456)');
-        } catch (err) {
-            if (err.message.includes('UNIQUE constraint failed')) {
-                console.log('✓ Test user already exists');
-            } else {
-                throw err;
+        if (!isProduction || process.env.CREATE_DEFAULT_USER === 'true') {
+            const userPassword = process.env.DEFAULT_USER_PASSWORD || (isProduction ? '' : '123456');
+            if (!userPassword) throw new Error('DEFAULT_USER_PASSWORD is required when CREATE_DEFAULT_USER=true');
+            try {
+                await User.create(database, { username: process.env.DEFAULT_USER_USERNAME || 'user', password: userPassword, role: 'user' });
+                console.log('✓ Created default user');
+            } catch (err) {
+                if (err.message.includes('UNIQUE constraint failed')) {
+                    console.log('✓ Test user already exists');
+                } else {
+                    throw err;
+                }
             }
         }
 
@@ -358,9 +367,11 @@ async function setupDatabase() {
         }
 
         console.log('\n🎉 Database setup completed successfully!');
-        console.log('\nDefault login credentials:');
-        console.log('- Admin: username=admin, password=123456');
-        console.log('- User: username=user, password=123456');
+        if (!isProduction) {
+            console.log('\nDevelopment login credentials: admin/123456 and user/123456');
+        } else {
+            console.log('\nProduction setup completed without printing credentials.');
+        }
 
     } catch (error) {
         console.error('❌ Error setting up database:', error.message);
