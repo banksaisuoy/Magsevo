@@ -3,7 +3,14 @@ const jwt = require('jsonwebtoken');
 const { Database, User, Log } = require('../models/index');
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+const isProduction = process.env.NODE_ENV === 'production';
+const getJwtSecret = () => {
+    const secret = process.env.JWT_SECRET || (!isProduction ? 'dev-only-change-me' : '');
+    if (isProduction && secret.length < 32) {
+        throw new Error('JWT_SECRET must be set to a random value of at least 32 characters in production');
+    }
+    return secret;
+};
 // Database is accessed via req.app.get('db')
 
 // Login route
@@ -28,7 +35,7 @@ router.post('/login', async (req, res) => {
 
         const token = jwt.sign(
             { username: user.username, role: user.role },
-            JWT_SECRET,
+            getJwtSecret(),
             { expiresIn: '24h' }
         );
 
@@ -58,7 +65,7 @@ router.post('/logout', async (req, res) => {
 
         if (token) {
             try {
-                const decoded = jwt.verify(token, JWT_SECRET);
+                const decoded = jwt.verify(token, getJwtSecret());
                 await Log.create(db, decoded.username, 'Logout', `User ${decoded.username} logged out`);
             } catch (err) {
                 // Token invalid, but that's ok for logout
@@ -82,7 +89,7 @@ router.get('/verify', async (req, res) => {
             return res.status(401).json({ error: 'No token provided' });
         }
 
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, getJwtSecret());
         res.json({
             success: true,
             user: {

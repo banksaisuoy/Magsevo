@@ -18,6 +18,9 @@ class SystemHealthMonitor {
     }
 
     async initDatabase() {
+        if (!this.database) {
+            throw new Error('Database is not initialized');
+        }
         return this.database;
     }
 
@@ -158,7 +161,7 @@ class SystemHealthMonitor {
      */
     async getDatabaseSize() {
         try {
-            const dbPath = path.join(__dirname, '../visionhub.db');
+            const dbPath = process.env.DB_PATH || path.join(__dirname, '../server/visionhub.db');
             const stats = await fs.stat(dbPath);
             return Math.round(stats.size / 1024 / 1024 * 100) / 100; // MB with 2 decimal places
         } catch (error) {
