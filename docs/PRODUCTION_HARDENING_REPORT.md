@@ -8,8 +8,8 @@
 |---|---|
 | Remote head | `5233606cca7cd6d981666b4908a66780eec6032d` |
 | PR state | Open, mergeable, checks clean |
-| Handoff bundle | [Google Drive รุ่น 2026-08-27.3](https://drive.google.com/drive/folders/1ermg54w5NpKF7ZLd7RXSJ9PHV9YbegzI) |
-| Master report | [FINAL_REPORT_TH.md ใน Drive](https://drive.google.com/drive/folders/1ermg54w5NpKF7ZLd7RXSJ9PHV9YbegzI) |
+| Handoff bundle | [Google Drive รุ่น 2026-08-28.4](https://drive.google.com/drive/folders/10feI_U8qb_XixTdr6XUVqU-vYb_7vigI) |
+| Master report | [FINAL_REPORT_TH.md ใน Drive](https://drive.google.com/drive/folders/10feI_U8qb_XixTdr6XUVqU-vYb_7vigI) |
 
 ## การแก้ไขสำคัญ
 
@@ -24,7 +24,7 @@
 | Lint | ผ่าน |
 | Tests | 53 tests ผ่านจาก 7 suites |
 | Production dependency audit | ไม่พบ high/critical vulnerabilities |
-| Runtime smoke | `/api/health` HTTP 200 บน temporary SQLite DB |
+| Runtime smoke | `/api/health` HTTP 200 บน temporary SQLite DB; configured Render URL did not expose expected endpoint during live check |
 | GitHub Build Test | ผ่าน |
 | GitHub QA | ผ่าน |
 | Review workflow | Skipped ตาม workflow configuration |
