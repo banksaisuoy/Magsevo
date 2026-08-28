@@ -10,11 +10,28 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+const PORT = Number(process.env.PORT) || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+const JWT_SECRET = process.env.JWT_SECRET || (isProduction ? '' : 'dev-only-change-me');
+if (isProduction && JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be set to a random value of at least 32 characters in production');
+}
+
+const configuredOrigins = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+const corsOptions = {
+    origin: isProduction
+        ? (origin, callback) => {
+            if (!origin || configuredOrigins.includes(origin)) return callback(null, true);
+            return callback(new Error('Origin is not allowed by CORS'));
+        }
+        : true,
+};
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
@@ -45,6 +62,7 @@ async function initializeApp() {
         // Import API routes after database is connected
         const apiRoutes = require('./routes');
         const healthMonitor = require('./services/healthMonitor');
+        healthMonitor.setDatabase(db);
         const aiService = require('./services/aiService');
         const apiManager = require('./middleware/apiManager');
 
@@ -328,14 +346,28 @@ async function initDatabase() {
 
 // Seed database with initial data
 async function seedDatabase() {
-    // Create default admin user
-    const adminPassword = await bcrypt.hash('123456', 10);
-    const userPassword = await bcrypt.hash('123456', 10);
+    // Never create predictable credentials in production. An existing production
+    // database may start without the seed variables once an admin already exists.
+    const existingAdmin = await db.get(`SELECT username FROM users WHERE role = 'admin' LIMIT 1`);
+    const configuredAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD || (!isProduction ? '123456' : '');
+    if (!existingAdmin && !configuredAdminPassword) {
+        throw new Error('DEFAULT_ADMIN_PASSWORD is required to initialize an empty production database');
+    }
+    if (configuredAdminPassword) {
+        const adminPassword = await bcrypt.hash(configuredAdminPassword, 12);
+        await db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
+               [process.env.DEFAULT_ADMIN_USERNAME || 'admin', adminPassword, 'admin']);
+    }
 
-    await db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
-           ['admin', adminPassword, 'admin']);
-    await db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
-           ['user', userPassword, 'user']);
+    if (!isProduction || process.env.CREATE_DEFAULT_USER === 'true') {
+        const configuredUserPassword = process.env.DEFAULT_USER_PASSWORD || (!isProduction ? '123456' : '');
+        if (!configuredUserPassword) {
+            throw new Error('DEFAULT_USER_PASSWORD is required when CREATE_DEFAULT_USER=true');
+        }
+        const userPassword = await bcrypt.hash(configuredUserPassword, 12);
+        await db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
+               [process.env.DEFAULT_USER_USERNAME || 'user', userPassword, 'user']);
+    }
 
     // Create default categories
     const categories = ['Development', 'Design', 'Marketing'];

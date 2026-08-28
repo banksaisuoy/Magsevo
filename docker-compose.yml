@@ -8,20 +8,27 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - JWT_SECRET=your-production-secret-key-change-this
-      - GEMINI_API_KEY=AIzaSyDAw9EVTk9zJ0w4Rzywurh7tAwM6zFfvMA
+      - DB_PATH=/app/server/visionhub.db
+      - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET in .env}
+      - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD:?set DEFAULT_ADMIN_PASSWORD in .env}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - CORS_ORIGIN=${CORS_ORIGIN:-}
     volumes:
       - ./server/visionhub.db:/app/server/visionhub.db
       - ./public/uploads:/app/public/uploads
     restart: unless-stopped
     depends_on:
-      - db-init
+      db-init:
+        condition: service_completed_successfully
 
   db-init:
     build: .
     command: npm run setup
     environment:
       - NODE_ENV=production
+      - DB_PATH=/app/server/visionhub.db
+      - DEFAULT_ADMIN_USERNAME=${DEFAULT_ADMIN_USERNAME:-admin}
+      - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD:?set DEFAULT_ADMIN_PASSWORD in .env}
     volumes:
       - ./server/visionhub.db:/app/server/visionhub.db
     restart: "no"

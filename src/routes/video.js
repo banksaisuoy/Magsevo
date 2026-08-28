@@ -28,3 +28,5 @@ module.exports = (db) => {
   router.post('/upload', upload.single('video'), videoController.uploadVideo);
   router.put('/:id', videoController.updateVideo);
   router.delete('/:id', videoController.deleteVideo);
+  return router;
+};
